@@ -1,6 +1,5 @@
 package com.sciencetoppers.api.service;
 
-import com.google.firebase.database.*;
 import com.sciencetoppers.api.model.User;
 import com.sciencetoppers.api.model.Subject;
 import com.sciencetoppers.api.model.Section;
@@ -8,6 +7,9 @@ import com.sciencetoppers.api.model.VideoItem;
 import com.sciencetoppers.api.model.ContentItem;
 import com.sciencetoppers.api.model.PaymentInfo;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -15,59 +17,31 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class FirebaseService {
 
+    @Value("${firebase.database.url}")
+    private String databaseUrl;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
     private static final String BASE_PATH = "/new/main";
 
     // ─── Generic read ────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
     private <T> CompletableFuture<T> readPath(String path) {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        try {
-            if (com.google.firebase.FirebaseApp.getApps().isEmpty()) {
-                future.completeExceptionally(
-                        new RuntimeException("Firebase Admin SDK not initialized — missing credentials"));
-                return future;
-            }
-            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(path);
-            ref.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot snapshot) {
-                    future.complete((T) snapshot.getValue());
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    future.completeExceptionally(error.toException());
-                }
-            });
-        } catch (Exception e) {
-            future.completeExceptionally(new RuntimeException("Firebase read failed: " + e.getMessage()));
-        }
-        return future;
+        return CompletableFuture.supplyAsync(() -> {
+            String url = databaseUrl + path + ".json";
+            return (T) restTemplate.getForObject(url, Object.class);
+        });
     }
 
     // ─── Write ───────────────────────────────────────────────────────────────
 
     private CompletableFuture<Void> writePath(String path, Object value) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        try {
-            if (com.google.firebase.FirebaseApp.getApps().isEmpty()) {
-                future.completeExceptionally(
-                        new RuntimeException("Firebase Admin SDK not initialized"));
-                return future;
-            }
-            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(path);
-            ref.setValue(value, (error, reference) -> {
-                if (error != null) {
-                    future.completeExceptionally(error.toException());
-                } else {
-                    future.complete(null);
-                }
-            });
-        } catch (Exception e) {
-            future.completeExceptionally(new RuntimeException("Firebase write failed: " + e.getMessage()));
-        }
-        return future;
+        return CompletableFuture.runAsync(() -> {
+            String url = databaseUrl + path + ".json";
+            restTemplate.put(url, value);
+        });
     }
 
     /**
@@ -80,29 +54,16 @@ public class FirebaseService {
     public CompletableFuture<Void> updateVideoPrice(
             String subjectId, String sectionId, String folderId, String videoKey, String newPrice) {
 
-        Map<String, Object> update = Collections.singletonMap("price", newPrice);
-
-        // Determine the node path (mirrors the save logic in addVideoToPath)
-        boolean isRoot = sectionId.equals(folderId);
-        String nodePath = isRoot
-                ? BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + videoKey
-                : BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + folderId + "/" + videoKey;
-
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        try {
-            if (com.google.firebase.FirebaseApp.getApps().isEmpty()) {
-                future.completeExceptionally(new RuntimeException("Firebase not initialized"));
-                return future;
-            }
-            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(nodePath);
-            ref.updateChildren(update, (error, reference) -> {
-                if (error != null) future.completeExceptionally(error.toException());
-                else future.complete(null);
-            });
-        } catch (Exception e) {
-            future.completeExceptionally(e);
-        }
-        return future;
+        return CompletableFuture.runAsync(() -> {
+            Map<String, Object> update = Collections.singletonMap("price", newPrice);
+            boolean isRoot = sectionId.equals(folderId);
+            String nodePath = isRoot
+                    ? BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + videoKey
+                    : BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + folderId + "/" + videoKey;
+            
+            String url = databaseUrl + nodePath + ".json";
+            restTemplate.patchForObject(url, update, Object.class);
+        });
     }
 
     // ─── Subjects ────────────────────────────────────────────────────────────
@@ -841,18 +802,10 @@ public class FirebaseService {
 
                     // Append new video to this student's subs list using Firebase push
                     String studentSubsPath = BASE_PATH + "/users/" + entry.getKey() + "/subs";
-                    CompletableFuture<Void> pushFuture = new CompletableFuture<>();
-                    try {
-                        DatabaseReference ref = FirebaseDatabase.getInstance().getReference(studentSubsPath);
-                        ref.push().setValue(videoData, (error, reference) -> {
-                            if (error != null)
-                                pushFuture.completeExceptionally(error.toException());
-                            else
-                                pushFuture.complete(null);
-                        });
-                    } catch (Exception e) {
-                        pushFuture.complete(null); // don't fail the whole operation
-                    }
+                    CompletableFuture<Void> pushFuture = CompletableFuture.runAsync(() -> {
+                        String url = databaseUrl + studentSubsPath + ".json";
+                        restTemplate.postForLocation(url, videoData);
+                    }).exceptionally(e -> null); // don't fail the whole operation
                     futures.add(pushFuture);
                 }
             }
@@ -931,18 +884,10 @@ public class FirebaseService {
                         continue;
 
                     String studentSubsPath = BASE_PATH + "/users/" + entry.getKey() + "/subs";
-                    CompletableFuture<Void> pushFuture = new CompletableFuture<>();
-                    try {
-                        DatabaseReference ref = FirebaseDatabase.getInstance().getReference(studentSubsPath);
-                        ref.push().setValue(videoData, (error, reference) -> {
-                            if (error != null)
-                                pushFuture.completeExceptionally(error.toException());
-                            else
-                                pushFuture.complete(null);
-                        });
-                    } catch (Exception e) {
-                        pushFuture.complete(null);
-                    }
+                    CompletableFuture<Void> pushFuture = CompletableFuture.runAsync(() -> {
+                        String url = databaseUrl + studentSubsPath + ".json";
+                        restTemplate.postForLocation(url, videoData);
+                    }).exceptionally(e -> null); // don't fail the whole operation
                     futures.add(pushFuture);
                 }
             }
