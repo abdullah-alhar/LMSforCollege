@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Play, Lock, FileText, HelpCircle, X, Key, User, Loader2, Plus, Upload } from 'lucide-react';
+import { Play, Lock, FileText, HelpCircle, X, Key, User, Loader2, Plus, Upload, Video } from 'lucide-react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -290,6 +290,31 @@ const VideoList = () => {
   const [lockedModal, setLockedModal] = useState(false);
   const [grantModalVideo, setGrantModalVideo] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [togglingPrice, setTogglingPrice] = useState({}); // videoId → true while saving
+
+  // Toggle a video's price between free ('f') and paid ('p')
+  const handleTogglePrice = async (e, v) => {
+    e.stopPropagation();
+    const newPrice = (v.price === 'p' || v.price === 'paid') ? 'f' : 'p';
+    setTogglingPrice(prev => ({ ...prev, [v.id]: true }));
+    try {
+      await client.patch('/admin/content/video/price', {
+        subjectId: id,
+        sectionId: decodeURIComponent(sectionId),
+        folderId: decodeURIComponent(folderId),
+        videoKey: v.id,
+        price: newPrice,
+      });
+      // Update local state so UI refreshes instantly
+      setVideos(prev => prev.map(item =>
+        item.id === v.id ? { ...item, price: newPrice } : item
+      ));
+    } catch (err) {
+      alert('Failed to update price: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setTogglingPrice(prev => ({ ...prev, [v.id]: false }));
+    }
+  };
 
   const fetchVideos = async () => {
     try {
@@ -448,8 +473,12 @@ const VideoList = () => {
               {(!v.type || v.type.toLowerCase() === 'video') ? (
                 <div className="video-thumb">
                   {/* Thumbnail */}
-                  {v.thumbnailUrl && (
+                  {v.thumbnailUrl ? (
                     <img src={v.thumbnailUrl} alt={v.title} />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: 'rgba(255, 255, 255, 0.05)' }}>
+                      <Video size={48} color="var(--text-muted)" />
+                    </div>
                   )}
                   {/* FREE / PAID badge */}
                   <span className={`badge-overlay ${isPaid(v) ? 'badge-overlay-paid' : 'badge-overlay-free'}`}>
@@ -486,14 +515,32 @@ const VideoList = () => {
                     </button>
                   )}
                   {isAdmin && (
-                    <button
-                      type="button"
-                      className="action-btn"
-                      style={{ marginLeft: 'auto' }}
-                      onClick={(e) => { e.stopPropagation(); setGrantModalVideo(v); }}
-                    >
-                      <Key size={13} style={{ verticalAlign: 'middle', marginRight: '2px' }} /> Give Access
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="action-btn"
+                        style={{
+                          background: isPaid(v) ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                          color: isPaid(v) ? '#6ee7b7' : '#fca5a5',
+                          border: isPaid(v) ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)',
+                        }}
+                        onClick={(e) => handleTogglePrice(e, v)}
+                        disabled={!!togglingPrice[v.id]}
+                      >
+                        {togglingPrice[v.id]
+                          ? <Loader2 size={11} className="spin" style={{ verticalAlign: 'middle' }} />
+                          : isPaid(v) ? '✓ Make Free' : '🔒 Make Paid'
+                        }
+                      </button>
+                      <button
+                        type="button"
+                        className="action-btn"
+                        style={{ marginLeft: 'auto' }}
+                        onClick={(e) => { e.stopPropagation(); setGrantModalVideo(v); }}
+                      >
+                        <Key size={13} style={{ verticalAlign: 'middle', marginRight: '2px' }} /> Give Access
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

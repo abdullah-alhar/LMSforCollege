@@ -38,7 +38,7 @@ const Navbar = () => {
             <GraduationCap size={18} color="#070b12" />
           </div>
           <span style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:800, fontSize:'1rem', letterSpacing:'-0.01em' }}>
-            <span className="brand-e">e</span>SCIENCE TOPPERS
+            LMS for College
           </span>
         </Link>
 

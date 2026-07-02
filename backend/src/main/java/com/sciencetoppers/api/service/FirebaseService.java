@@ -70,6 +70,41 @@ public class FirebaseService {
         return future;
     }
 
+    /**
+     * Updates the price field of a video node at:
+     *   pathExtra/{subjectId}/{sectionId}/{videoKey}
+     * and (if folder differs from section):
+     *   pathExtra/{subjectId}/{sectionId}/{folderId}/{videoKey}
+     * Uses updateChildren so only the price field is changed.
+     */
+    public CompletableFuture<Void> updateVideoPrice(
+            String subjectId, String sectionId, String folderId, String videoKey, String newPrice) {
+
+        Map<String, Object> update = Collections.singletonMap("price", newPrice);
+
+        // Determine the node path (mirrors the save logic in addVideoToPath)
+        boolean isRoot = sectionId.equals(folderId);
+        String nodePath = isRoot
+                ? BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + videoKey
+                : BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + folderId + "/" + videoKey;
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        try {
+            if (com.google.firebase.FirebaseApp.getApps().isEmpty()) {
+                future.completeExceptionally(new RuntimeException("Firebase not initialized"));
+                return future;
+            }
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(nodePath);
+            ref.updateChildren(update, (error, reference) -> {
+                if (error != null) future.completeExceptionally(error.toException());
+                else future.complete(null);
+            });
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
     // ─── Subjects ────────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
@@ -173,6 +208,16 @@ public class FirebaseService {
                 .compile("youtube\\.com/embed/([A-Za-z0-9_-]{11})").matcher(url);
         if (m.find())
             return m.group(1);
+        // youtube.com/shorts/VIDEO_ID
+        m = java.util.regex.Pattern
+                .compile("youtube\\.com/shorts/([A-Za-z0-9_-]{11})").matcher(url);
+        if (m.find())
+            return m.group(1);
+        // youtube.com/live/VIDEO_ID
+        m = java.util.regex.Pattern
+                .compile("youtube\\.com/live/([A-Za-z0-9_-]{11})").matcher(url);
+        if (m.find())
+            return m.group(1);
         return null;
     }
 
@@ -212,20 +257,57 @@ public class FirebaseService {
     public CompletableFuture<List<ContentItem>> getContentItems(
             String subjectId, String sectionId, String folder) {
 
-        // Firebase Admin SDK uses raw strings — no URL encoding needed
-        String primaryPath = BASE_PATH + "/content/" + subjectId + "/" + sectionId + "/" + folder;
+        // When folder == sectionId the content lives DIRECTLY under
+        // pathExtra/{subject}/{section}/ (not a subdirectory with the section name again).
+        // When folder != sectionId it lives under pathExtra/{subject}/{section}/{folder}/.
+        boolean isRoot = sectionId.equals(folder);
+        String pathExtraPath = isRoot
+                ? BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId
+                : BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + folder;
 
-        return readPath(primaryPath).thenApply(value -> {
+        // Also read from /content/ for any videos written by the old path (kept for backward compatibility)
+        String contentPath = isRoot
+                ? BASE_PATH + "/content/" + subjectId + "/" + sectionId
+                : BASE_PATH + "/content/" + subjectId + "/" + sectionId + "/" + folder;
+
+        CompletableFuture<Object> pathExtraFuture = readPath(pathExtraPath);
+        CompletableFuture<Object> contentFuture   = readPath(contentPath);
+
+        return pathExtraFuture.thenCombine(contentFuture, (extraVal, contentVal) -> {
             List<ContentItem> items = new ArrayList<>();
-            if (value instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) value;
+            Set<String> seenKeys = new java.util.HashSet<>();
+
+            // Helper to add an item if it looks like a content item (has 'content' or 'key')
+            // and is not just a folder metadata node
+            java.util.function.BiConsumer<String, Map<String, Object>> addIfContent = (entryKey, child) -> {
+                if (child.get("content") != null || child.get("key") != null) {
+                    String id = getStr(child, "key") != null ? getStr(child, "key") : entryKey;
+                    if (seenKeys.add(id)) {
+                        items.add(mapToContentItem(entryKey, child, subjectId, sectionId, folder));
+                    }
+                }
+            };
+
+            // Process /pathExtra/ first (primary store)
+            if (extraVal instanceof Map) {
+                Map<String, Object> map = (Map<String, Object>) extraVal;
                 for (Map.Entry<String, Object> entry : map.entrySet()) {
                     if (entry.getValue() instanceof Map) {
-                        items.add(mapToContentItem(entry.getKey(), (Map<String, Object>) entry.getValue(),
-                                subjectId, sectionId, folder));
+                        addIfContent.accept(entry.getKey(), (Map<String, Object>) entry.getValue());
                     }
                 }
             }
+
+            // Process /content/ as fallback (backward compat)
+            if (contentVal instanceof Map) {
+                Map<String, Object> map = (Map<String, Object>) contentVal;
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    if (entry.getValue() instanceof Map) {
+                        addIfContent.accept(entry.getKey(), (Map<String, Object>) entry.getValue());
+                    }
+                }
+            }
+
             return items;
         });
     }
@@ -806,9 +888,17 @@ public class FirebaseService {
                 new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS").format(new java.util.Date(now)));
         videoData.put("days", "0");
 
+        // Build the correct pathExtra save path:
+        // - If parentPath is empty or contains only sectionId => save directly under
+        //   pathExtra/{subject}/{section}/{key}  (root of section)
+        // - Otherwise append each segment that is NOT the sectionId as a subfolder
         StringBuilder pathBuilder = new StringBuilder(BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId);
-        for (String segment : parentPath) {
-            pathBuilder.append("/").append(segment);
+        if (parentPath != null) {
+            for (String segment : parentPath) {
+                if (!segment.equals(sectionId)) {
+                    pathBuilder.append("/").append(segment);
+                }
+            }
         }
         pathBuilder.append("/").append(key);
 

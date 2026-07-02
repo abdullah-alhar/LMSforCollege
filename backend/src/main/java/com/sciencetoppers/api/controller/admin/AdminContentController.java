@@ -155,7 +155,44 @@ public class AdminContentController {
             return ResponseEntity.status(403)
                     .body(Map.of("error", "You are only allowed to manage subject: " + owner));
         }
-
         return ResponseEntity.ok(firebaseService.getVideosForSection(subjectId, sectionId).get());
+    }
+
+    /**
+     * PATCH /api/admin/content/video/price
+     * Body: { subjectId, sectionId, folderId, videoKey, price }
+     * price must be "f" (free) or "p" (paid).
+     * Updates only the price field of the video node in Firebase.
+     */
+    @PatchMapping("/video/price")
+    public ResponseEntity<?> updateVideoPrice(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader)
+            throws ExecutionException, InterruptedException {
+
+        String owner     = resolveOwner(authHeader);
+        String subjectId = (String) body.get("subjectId");
+
+        if (owner != null && !owner.isBlank() && !owner.equalsIgnoreCase(subjectId)) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("error", "You are only allowed to manage subject: " + owner));
+        }
+
+        String sectionId = (String) body.get("sectionId");
+        String folderId  = body.get("folderId") != null ? (String) body.get("folderId") : sectionId;
+        String videoKey  = (String) body.get("videoKey");
+        String price     = (String) body.get("price");
+
+        if (subjectId == null || sectionId == null || videoKey == null || price == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "subjectId, sectionId, videoKey, and price are required"));
+        }
+        if (!price.equals("f") && !price.equals("p")) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "price must be 'f' (free) or 'p' (paid)"));
+        }
+
+        firebaseService.updateVideoPrice(subjectId, sectionId, folderId, videoKey, price).get();
+        return ResponseEntity.ok(Map.of("message", "Price updated to " + (price.equals("f") ? "Free" : "Paid")));
     }
 }

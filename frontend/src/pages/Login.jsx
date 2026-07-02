@@ -64,8 +64,13 @@ const Login = () => {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [mounted, setMounted]   = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate  = useNavigate();
+
+  // If already logged in, skip the login page entirely
+  useEffect(() => {
+    if (user) navigate('/', { replace: true });
+  }, [user, navigate]);
 
   useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
 
@@ -124,7 +129,7 @@ const Login = () => {
             fontWeight: 800, fontSize: '0.95rem',
             color: '#f0f4ff', letterSpacing: '-0.01em',
           }}>
-            <span style={{ color: '#00d4d8' }}>e</span>SCIENCE TOPPERS
+            LMS for College
           </span>
         </div>
 
@@ -278,7 +283,7 @@ const Login = () => {
 
         {/* Bottom: copyright */}
         <p style={{ fontSize: '0.7rem', color: '#2d3a52', textAlign: 'center' }}>
-          © {new Date().getFullYear()} eSCIENCE TOPPERS. All rights reserved.
+          © {new Date().getFullYear()} LMS for College. All rights reserved.
         </p>
       </div>
 

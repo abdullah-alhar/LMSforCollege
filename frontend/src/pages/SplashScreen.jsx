@@ -1,13 +1,24 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const SplashScreen = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => navigate('/login'), 2800);
+    if (loading) return; // wait until auth resolves
+    // Mark that the splash has been shown this session
+    sessionStorage.setItem('splashShown', 'true');
+    const timer = setTimeout(() => {
+      if (user) {
+        navigate('/', { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
+    }, 2800);
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
   return (
     <div className="splash">

@@ -6,7 +6,10 @@ const ProtectedRoute = ({ children, requireAdmin }) => {
   const { user } = useAuth();
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // First visit in this browser session → show splash screen
+    // Subsequent visits (back button, refresh) → go straight to login
+    const splashShown = sessionStorage.getItem('splashShown');
+    return <Navigate to={splashShown ? '/login' : '/splash'} replace />;
   }
 
   if (requireAdmin && user.role === 'STUDENT') {
