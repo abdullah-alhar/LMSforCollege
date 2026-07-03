@@ -150,6 +150,12 @@ button { font-family: inherit; cursor: pointer; }
   width: 100%;
 }
 
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ─── Navbar ───────────────────────────────────────────────────── */
 .navbar {
   background: var(--bg-card);

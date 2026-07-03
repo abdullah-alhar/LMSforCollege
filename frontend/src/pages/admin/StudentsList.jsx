@@ -185,7 +185,8 @@ const StudentsList = () => {
         </div>
       ) : (
         <div className="card" style={{ padding:0, overflow:'hidden' }} >
-          <table className="data-table">
+          <div className="table-responsive">
+            <table className="data-table">
             <thead>
               <tr>
                 <th style={{ width:40 }}>#</th>
@@ -230,7 +231,8 @@ const StudentsList = () => {
                 );
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       )}
 

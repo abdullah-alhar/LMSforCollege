@@ -236,10 +236,23 @@ const CustomVideoPlayer = ({ url, title }) => {
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    const el = containerRef.current;
+    
+    if (!isFullscreen) {
+      // Try native fullscreen first
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+      setIsFullscreen(true); // Always set true to enable CSS fallback
     } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      setIsFullscreen(false);
     }
   };
 
@@ -275,7 +288,10 @@ const CustomVideoPlayer = ({ url, title }) => {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
-        position: 'relative',
+        position: isFullscreen ? 'fixed' : 'relative',
+        top: isFullscreen ? 0 : 'auto',
+        left: isFullscreen ? 0 : 'auto',
+        zIndex: isFullscreen ? 9999 : 1,
         width: '100%',
         paddingBottom: isFullscreen ? '0' : '56.25%',
         height: isFullscreen ? '100vh' : '0',

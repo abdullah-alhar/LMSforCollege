@@ -239,6 +239,8 @@ const Navbar = () => {
           display:'flex', flexDirection:'column', gap:'0.25rem',
           padding:'1rem 1.5rem', borderTop:'1px solid var(--border)',
           background:'var(--bg-card)', backdropFilter:'blur(20px)',
+          position: 'absolute', top: '100%', left: 0, right: 0,
+          boxShadow: 'var(--shadow-lg)'
         }}>
           <Link to="/" className="nav-link" onClick={() => setMenuOpen(false)}>
             <Home size={15} /> Home
