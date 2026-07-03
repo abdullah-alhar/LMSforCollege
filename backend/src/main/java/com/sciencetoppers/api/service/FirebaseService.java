@@ -64,12 +64,24 @@ public class FirebaseService {
         return CompletableFuture.runAsync(() -> {
             Map<String, Object> update = Collections.singletonMap("price", newPrice);
             boolean isRoot = sectionId.equals(folderId);
-            String nodePath = isRoot
+            
+            String extraPath = isRoot
                     ? BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + videoKey
                     : BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + folderId + "/" + videoKey;
             
-            String url = databaseUrl + nodePath + ".json?x-http-method-override=PATCH";
-            restTemplate.postForObject(url, update, Object.class);
+            String contentPath = isRoot
+                    ? BASE_PATH + "/content/" + subjectId + "/" + sectionId + "/" + videoKey
+                    : BASE_PATH + "/content/" + subjectId + "/" + sectionId + "/" + folderId + "/" + videoKey;
+            
+            String urlExtra = databaseUrl + extraPath + ".json?x-http-method-override=PATCH";
+            String urlContent = databaseUrl + contentPath + ".json?x-http-method-override=PATCH";
+            
+            try {
+                restTemplate.postForObject(urlExtra, update, Object.class);
+            } catch (Exception e) {}
+            try {
+                restTemplate.postForObject(urlContent, update, Object.class);
+            } catch (Exception e) {}
         });
     }
 
@@ -1147,7 +1159,9 @@ public class FirebaseService {
     public CompletableFuture<Void> addNotice(Map<String, String> notice) {
         return CompletableFuture.runAsync(() -> {
             String url = databaseUrl + BASE_PATH + "/notices.json";
-            restTemplate.postForLocation(url, notice);
+            java.util.Map<String, Object> wrapper = new java.util.HashMap<>();
+            wrapper.put("global", notice);
+            restTemplate.put(url, wrapper);
         });
     }
 

@@ -31,10 +31,17 @@ public class NoticesController {
             if (title == null || title.isBlank()) {
                 return ResponseEntity.badRequest().body("Title is required");
             }
-            java.util.Map<String, String> notice = new java.util.HashMap<>();
+
+            long now = System.currentTimeMillis();
+            String isoDate = java.time.LocalDateTime.now().toString();
+
+            java.util.Map<String, Object> notice = new java.util.HashMap<>();
             notice.put("title", title);
             notice.put("desc", desc != null ? desc : "");
-            
+            notice.put("created", now);
+            notice.put("date", isoDate);
+            notice.put("type", "t");
+
             firebaseService.addNotice(notice).get();
             return ResponseEntity.ok(java.util.Map.of("message", "Notice added"));
         } catch (InterruptedException | ExecutionException e) {
