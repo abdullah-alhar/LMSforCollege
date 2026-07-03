@@ -195,4 +195,41 @@ public class AdminContentController {
         firebaseService.updateVideoPrice(subjectId, sectionId, folderId, videoKey, price).get();
         return ResponseEntity.ok(Map.of("message", "Price updated to " + (price.equals("f") ? "Free" : "Paid")));
     }
+
+    /**
+     * DELETE /api/admin/content/video
+     * Body: { subjectId, sectionId, folderId, videoKey }
+     * Deletes a video/file entirely.
+     */
+    @DeleteMapping("/video")
+    public ResponseEntity<?> deleteVideo(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader)
+            throws ExecutionException, InterruptedException {
+
+        String owner     = resolveOwner(authHeader);
+        String subjectId = (String) body.get("subjectId");
+
+        if (owner != null && !owner.isBlank() && !owner.equalsIgnoreCase(subjectId)) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("error", "You are only allowed to manage subject: " + owner));
+        }
+
+        String sectionId = (String) body.get("sectionId");
+        String folderId  = body.get("folderId") != null ? (String) body.get("folderId") : sectionId;
+        String videoKey  = (String) body.get("videoKey");
+
+        if (subjectId == null || sectionId == null || videoKey == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "subjectId, sectionId, and videoKey are required"));
+        }
+
+        try {
+            firebaseService.deleteVideo(subjectId, sectionId, folderId, videoKey).get();
+            return ResponseEntity.ok(Map.of("message", "Video deleted successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to delete video: " + e.getMessage()));
+        }
+    }
 }

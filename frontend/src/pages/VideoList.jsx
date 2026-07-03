@@ -242,13 +242,16 @@ const UploadVideoModal = ({ subjectId, sectionId, folderId, onClose, onUploaded 
           </div>
 
           <div className="input-group">
-            <label>URL</label>
+            <label>Content URL (YouTube or Google Drive)</label>
             <input
-              placeholder="https://youtu.be/..."
+              placeholder="https://youtu.be/... or https://drive.google.com/..."
               value={content}
               onChange={e => setContent(e.target.value)}
               required
             />
+            <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+              Paste a YouTube link or a Google Drive shareable link.
+            </small>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -256,7 +259,7 @@ const UploadVideoModal = ({ subjectId, sectionId, folderId, onClose, onUploaded 
               <label>Type</label>
               <select value={type} onChange={e => setType(e.target.value)}>
                 <option value="Video">Video</option>
-                <option value="Document">Document</option>
+                <option value="File">File</option>
                 <option value="Note">Note</option>
               </select>
             </div>
@@ -539,6 +542,27 @@ const VideoList = () => {
                         onClick={(e) => { e.stopPropagation(); setGrantModalVideo(v); }}
                       >
                         <Key size={13} style={{ verticalAlign: 'middle', marginRight: '2px' }} /> Give Access
+                      </button>
+                      <button
+                        type="button"
+                        className="action-btn"
+                        style={{ color: '#fca5a5', borderColor: 'transparent' }}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Are you sure you want to delete ${v.title}?`)) {
+                            try {
+                              await client.delete('/admin/content/video', {
+                                data: { subjectId: id, sectionId: decodeURIComponent(sectionId), folderId: decodeURIComponent(folderId), videoKey: v.id }
+                              });
+                              fetchVideos();
+                            } catch (err) {
+                              alert('Failed to delete content');
+                            }
+                          }
+                        }}
+                        title="Delete"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                       </button>
                     </>
                   )}

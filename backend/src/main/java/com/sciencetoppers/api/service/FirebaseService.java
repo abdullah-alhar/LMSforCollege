@@ -44,6 +44,13 @@ public class FirebaseService {
         });
     }
 
+    private CompletableFuture<Void> deletePath(String path) {
+        return CompletableFuture.runAsync(() -> {
+            String url = databaseUrl + path + ".json";
+            restTemplate.delete(url);
+        });
+    }
+
     /**
      * Updates the price field of a video node at:
      *   pathExtra/{subjectId}/{sectionId}/{videoKey}
@@ -61,8 +68,8 @@ public class FirebaseService {
                     ? BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + videoKey
                     : BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + folderId + "/" + videoKey;
             
-            String url = databaseUrl + nodePath + ".json";
-            restTemplate.patchForObject(url, update, Object.class);
+            String url = databaseUrl + nodePath + ".json?x-http-method-override=PATCH";
+            restTemplate.postForObject(url, update, Object.class);
         });
     }
 
@@ -1014,6 +1021,128 @@ public class FirebaseService {
         v.setType(getStr(itemMap, "type"));
         v.setPrice(getStr(itemMap, "price"));
         return v;
+    }
+
+    // ─── User / Student Management ────────────────────────────────────────────
+
+    /**
+     * Updates the password (pass) field of a user node.
+     */
+    public CompletableFuture<Void> updateUserPassword(String uid, String newPassword) {
+        Map<String, Object> update = Collections.singletonMap("pass", newPassword);
+        return updateStudent(uid, update);
+    }
+
+    /**
+     * Updates editable fields (name, index, type/role) for a student node.
+     * Only non-null fields in the updates map are written.
+     */
+    public CompletableFuture<Void> updateStudent(String uid, Map<String, Object> updates) {
+        String path = BASE_PATH + "/users/" + uid;
+        return CompletableFuture.runAsync(() -> {
+            String url = databaseUrl + path + ".json?x-http-method-override=PATCH";
+            restTemplate.postForObject(url, updates, Object.class);
+        });
+    }
+
+    /**
+     * Deletes a student's user node entirely from Firebase.
+     */
+    public CompletableFuture<Void> deleteStudent(String uid) {
+        return deletePath(BASE_PATH + "/users/" + uid);
+    }
+
+    /**
+     * Verifies a user's current password by looking up their stored password in Firebase.
+     * Returns true if the stored password matches.
+     */
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Boolean> verifyUserPassword(String uid, String password) {
+        return readPath(BASE_PATH + "/users/" + uid).thenApply(value -> {
+            if (value instanceof Map) {
+                Map<String, Object> userMap = (Map<String, Object>) value;
+                String stored = getStr(userMap, "pass");
+                return password != null && password.equals(stored);
+            }
+            return false;
+        });
+    }
+
+    /**
+     * Looks up a user UID by username/index (for auth flows).
+     */
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<String> resolveUidByUsername(String username) {
+        if (username == null || username.trim().isEmpty()) return CompletableFuture.completedFuture(null);
+        return readPath(BASE_PATH + "/users").thenApply(value -> {
+            if (value instanceof Map) {
+                Map<String, Object> usersMap = (Map<String, Object>) value;
+                for (Map.Entry<String, Object> entry : usersMap.entrySet()) {
+                    if (entry.getValue() instanceof Map) {
+                        Map<String, Object> userMap = (Map<String, Object>) entry.getValue();
+                        String storedName = getStr(userMap, "name");
+                        String storedIndex = getStr(userMap, "index");
+                        if (username.equals(storedName) || username.equals(storedIndex) || username.equals(entry.getKey())) {
+                            return entry.getKey();
+                        }
+                    }
+                }
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Checks if an index number is already in use by another student.
+     * @param index The index to check
+     * @param excludeUid Optional UID to exclude from the check (useful for updates)
+     */
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Boolean> isIndexTaken(String index, String excludeUid) {
+        if (index == null || index.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return readPath(BASE_PATH + "/users").thenApply(value -> {
+            if (value instanceof Map) {
+                Map<String, Object> usersMap = (Map<String, Object>) value;
+                for (Map.Entry<String, Object> entry : usersMap.entrySet()) {
+                    if (excludeUid != null && excludeUid.equals(entry.getKey())) continue;
+                    
+                    if (entry.getValue() instanceof Map) {
+                        Map<String, Object> userMap = (Map<String, Object>) entry.getValue();
+                        String storedIndex = getStr(userMap, "index");
+                        if (index.equalsIgnoreCase(storedIndex)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        });
+    }
+
+    public CompletableFuture<Void> addNotice(Map<String, String> notice) {
+        return CompletableFuture.runAsync(() -> {
+            String url = databaseUrl + BASE_PATH + "/notices.json";
+            restTemplate.postForLocation(url, notice);
+        });
+    }
+
+    public CompletableFuture<Void> deleteNotice(String noticeId) {
+        return deletePath(BASE_PATH + "/notices/" + noticeId);
+    }
+
+    public CompletableFuture<Void> deleteVideo(String subjectId, String sectionId, String folderId, String videoKey) {
+        String subPath = "/" + subjectId + "/" + sectionId;
+        if (folderId != null && !folderId.equals(sectionId)) {
+            subPath += "/" + folderId;
+        }
+        subPath += "/" + videoKey;
+        
+        CompletableFuture<Void> delPathExtra = deletePath(BASE_PATH + "/pathExtra" + subPath);
+        CompletableFuture<Void> delContent   = deletePath(BASE_PATH + "/content" + subPath);
+        
+        return CompletableFuture.allOf(delPathExtra, delContent);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

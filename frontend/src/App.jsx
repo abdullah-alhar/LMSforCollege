@@ -13,6 +13,7 @@ import SectionFolders from './pages/SectionFolders';
 import VideoPlayer    from './pages/VideoPlayer';
 import LockedContent  from './pages/LockedContent';
 import ExpiredAccess  from './pages/ExpiredAccess';
+import ProfileSettings from './pages/ProfileSettings';
 
 import Dashboard      from './pages/admin/Dashboard';
 import StudentsList   from './pages/admin/StudentsList';
@@ -38,6 +39,7 @@ const AppShell = () => {
           <Routes>
             {/* Student routes */}
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/subject/:id" element={<ProtectedRoute><SubjectFolders /></ProtectedRoute>} />
             <Route path="/subject/:id/section/:sectionId" element={<ProtectedRoute><SectionFolders /></ProtectedRoute>} />
             <Route path="/subject/:id/section/:sectionId/folder/:folderId" element={<ProtectedRoute><VideoList /></ProtectedRoute>} />

@@ -117,12 +117,6 @@ const VideoPlayer = () => {
             </h2>
           )}
           <CustomVideoPlayer url={embedUrl} title={video?.title} />
-          <div className="card" style={{ marginTop:'1.25rem', display:'flex', alignItems:'center', gap:'0.75rem', background:'var(--bg-card)', border:'1px solid var(--border-teal)' }}>
-            <Shield size={18} color="var(--teal)" />
-            <p style={{ color:'var(--text-muted)', fontSize:'0.875rem', margin:0 }}>
-              Streamed securely via an encrypted player. Downloading or recording is not permitted.
-            </p>
-          </div>
         </div>
       ) : (
         <div className="state-box">

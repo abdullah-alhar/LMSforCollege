@@ -294,14 +294,17 @@ const ContentManager = () => {
                 </div>
 
                 <div className="input-group">
-                  <label>YouTube URL</label>
+                  <label>Content URL (YouTube or Google Drive)</label>
                   <input
                     name="content"
-                    placeholder="https://youtu.be/..."
+                    placeholder="https://youtu.be/... or https://drive.google.com/..."
                     value={videoForm.content}
                     onChange={handleVideoChange}
                     required
                   />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                    Paste a YouTube link or a Google Drive shareable link.
+                  </small>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -309,7 +312,7 @@ const ContentManager = () => {
                     <label>Type</label>
                     <select name="type" value={videoForm.type} onChange={handleVideoChange}>
                       <option value="Video">Video</option>
-                      <option value="Document">Document</option>
+                      <option value="File">File</option>
                       <option value="Note">Note</option>
                     </select>
                   </div>

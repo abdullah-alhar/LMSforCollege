@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Users, ArrowRight, BookOpen, Video, ShieldCheck, TrendingUp, Zap } from 'lucide-react';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import ProfileSettings from '../ProfileSettings';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -107,26 +108,74 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Guide box */}
-      <div className="card anim-in anim-in-2" style={{ borderColor:'var(--border-teal)', marginTop:'1.5rem' }}>
-        <div style={{ display:'flex', alignItems:'flex-start', gap:'1rem' }}>
-          <div style={{
-            width:38, height:38, borderRadius:8, flexShrink:0,
-            background:'rgba(255,107,53,0.12)', border:'1px solid rgba(255,107,53,0.2)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-          }}>
-            <TrendingUp size={18} color="var(--orange)" />
-          </div>
-          <div>
-            <div className="section-title" style={{ marginBottom:'0.4rem', fontSize:'0.95rem' }}>
-              Grant Video Access
-            </div>
-            <p style={{ color:'var(--text-muted)', fontSize:'0.875rem', lineHeight:'1.65' }}>
-              Browse to any subject → section → folder to upload content, create folders, and grant students access to paid videos directly from the video card.
-            </p>
-          </div>
-        </div>
+      {/* Notices */}
+      <div style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
+        <PostNoticeForm />
       </div>
+
+      <hr style={{ borderColor: 'var(--border)', margin: '2rem 0' }} />
+
+      <div className="section-title" style={{ marginBottom:'1rem' }}>Admin Account Settings</div>
+      <div style={{ background: 'var(--bg)', borderRadius: 'var(--r-md)' }}>
+        <ProfileSettings />
+      </div>
+    </div>
+  );
+};
+
+const PostNoticeForm = () => {
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  
+  const handlePost = async (e) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setLoading(true);
+    setSuccess('');
+    try {
+      await client.post('/notices', { title, desc });
+      setSuccess('Notice posted!');
+      setTitle('');
+      setDesc('');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      alert('Failed to post notice');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="card anim-in anim-in-2" style={{ borderTop: '2px solid var(--teal)' }}>
+      <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <Zap size={16} color="var(--teal)" /> Post Global Notice
+      </h3>
+      {success && <div style={{ fontSize: '0.8rem', color: '#10b981', marginBottom: '1rem' }}>✓ {success}</div>}
+      <form onSubmit={handlePost}>
+        <div className="input-group" style={{ marginBottom: '0.75rem' }}>
+          <input 
+            placeholder="Notice Title" 
+            value={title} 
+            onChange={e => setTitle(e.target.value)} 
+            required 
+            style={{ fontSize: '0.85rem' }}
+          />
+        </div>
+        <div className="input-group" style={{ marginBottom: '1rem' }}>
+          <textarea 
+            placeholder="Details (Optional)" 
+            value={desc} 
+            onChange={e => setDesc(e.target.value)} 
+            rows={2}
+            style={{ resize: 'vertical', fontSize: '0.85rem' }}
+          />
+        </div>
+        <button type="submit" className="btn btn-sm" disabled={loading || !title.trim()}>
+          {loading ? 'Posting...' : 'Post Notice'}
+        </button>
+      </form>
     </div>
   );
 };
