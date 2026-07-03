@@ -56,6 +56,7 @@ public class AdminStudentController {
         String role = request.getRole() != null ? request.getRole() : "STUDENT";
         userData.put("type", role.equalsIgnoreCase("ADMIN") ? "admin" : "student");
         userData.put("created", System.currentTimeMillis());
+        userData.put("profileComplete", false);
 
         firebaseService.updateStudent(uid, userData).get();
 
@@ -64,6 +65,7 @@ public class AdminStudentController {
             "uid", uid,
             "username", request.getUsername()
         ));
+
     }
 
     /**

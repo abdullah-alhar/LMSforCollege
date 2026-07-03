@@ -1053,6 +1053,29 @@ public class FirebaseService {
     }
 
     /**
+     * Returns selected profile fields for a student node.
+     * Fields returned: name, school, year, stream, phone, profileComplete, index.
+     */
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Map<String, Object>> getStudentProfile(String uid) {
+        return readPath(BASE_PATH + "/users/" + uid).thenApply(value -> {
+            Map<String, Object> profile = new LinkedHashMap<>();
+            if (value instanceof Map) {
+                Map<String, Object> userMap = (Map<String, Object>) value;
+                profile.put("name",  getStr(userMap, "name"));
+                profile.put("index", getStr(userMap, "index"));
+                profile.put("school", getStr(userMap, "school"));
+                profile.put("year",   getStr(userMap, "year"));
+                profile.put("stream", getStr(userMap, "stream"));
+                profile.put("phone",  getStr(userMap, "phone"));
+                Object pc = userMap.get("profileComplete");
+                profile.put("profileComplete", pc instanceof Boolean ? (Boolean) pc : true);
+            }
+            return profile;
+        });
+    }
+
+    /**
      * Verifies a user's current password by looking up their stored password in Firebase.
      * Returns true if the stored password matches.
      */

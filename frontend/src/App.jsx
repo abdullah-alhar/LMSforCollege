@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import FirstLoginModal from './components/FirstLoginModal';
 
 import SplashScreen   from './pages/SplashScreen';
 import Login          from './pages/Login';
@@ -25,10 +27,22 @@ const BARE_ROUTES = ['/splash', '/login'];
 const AppShell = () => {
   const location = useLocation();
   const isBare   = BARE_ROUTES.includes(location.pathname);
+  const { user } = useAuth();
+
+  // Show first-login modal for students who haven't completed their profile
+  const showFirstLoginModal =
+    user &&
+    user.role !== 'ADMIN' &&
+    user.profileComplete === false &&
+    !isBare;
 
   return (
     <div className="app-container">
       {!isBare && <Navbar />}
+
+      {/* First-login profile completion modal (non-skippable) */}
+      {showFirstLoginModal && <FirstLoginModal />}
+
       {isBare ? (
         <Routes>
           <Route path="/splash" element={<SplashScreen />} />

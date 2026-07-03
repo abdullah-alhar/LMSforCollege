@@ -90,4 +90,57 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("error", "Failed to change password: " + e.getMessage()));
         }
     }
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+            }
+            String token = authHeader.substring(7);
+            String username = jwtUtil.extractUsername(token);
+            String uid = firebaseService.resolveUidByUsername(username).get();
+            if (uid == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+            Object userData = firebaseService.getStudentProfile(uid).get();
+            return ResponseEntity.ok(userData != null ? userData : Map.of());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to get profile: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(
+            @RequestBody(required = false) Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+            }
+            if (body == null || body.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Request body is required"));
+            }
+            String token = authHeader.substring(7);
+            String username = jwtUtil.extractUsername(token);
+            String uid = firebaseService.resolveUidByUsername(username).get();
+            if (uid == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            Map<String, Object> updates = new HashMap<>();
+            if (body.containsKey("name"))   updates.put("name",   body.get("name"));
+            if (body.containsKey("school")) updates.put("school", body.get("school"));
+            if (body.containsKey("year"))   updates.put("year",   body.get("year"));
+            if (body.containsKey("stream")) updates.put("stream", body.get("stream"));
+            if (body.containsKey("phone"))  updates.put("phone",  body.get("phone"));
+            // Mark profile as complete
+            updates.put("profileComplete", true);
+
+            firebaseService.updateStudent(uid, updates).get();
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to update profile: " + e.getMessage()));
+        }
+    }
 }

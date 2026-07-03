@@ -11,7 +11,7 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   
   // Theme state
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(sessionStorage.getItem('theme') || 'light');
   
   // Dropdown states
   const [profileOpen, setProfileOpen] = useState(false);
@@ -23,7 +23,7 @@ const Navbar = () => {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    sessionStorage.setItem('theme', theme);
   }, [theme]);
 
   useEffect(() => {
