@@ -1156,7 +1156,7 @@ public class FirebaseService {
         });
     }
 
-    public CompletableFuture<Void> addNotice(Map<String, String> notice) {
+    public CompletableFuture<Void> addNotice(Map<String, Object> notice) {
         return CompletableFuture.runAsync(() -> {
             String url = databaseUrl + BASE_PATH + "/notices.json";
             java.util.Map<String, Object> wrapper = new java.util.HashMap<>();
