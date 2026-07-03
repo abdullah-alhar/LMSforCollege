@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lmsforcollege-tan.vercel.app/sitemap.xml
