@@ -3,6 +3,7 @@ package com.sciencetoppers.api.controller.admin;
 import com.sciencetoppers.api.dto.AdminCreateStudentRequest;
 import com.sciencetoppers.api.security.JwtUtil;
 import com.sciencetoppers.api.service.FirebaseService;
+import com.sciencetoppers.api.service.WebDeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,9 @@ public class AdminStudentController {
 
     @Autowired
     private FirebaseService firebaseService;
+
+    @Autowired
+    private WebDeviceService webDeviceService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -157,6 +161,20 @@ public class AdminStudentController {
                 "message", "Mobile app device registration reset",
                 "uid", uid,
                 "clearedPaths", clearedPaths
+        ));
+    }
+
+    @PostMapping("/{uid}/reset-web-browser")
+    public ResponseEntity<?> resetWebBrowser(
+            @PathVariable String uid,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (!isAdmin(authHeader)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Admin access required"));
+        }
+        webDeviceService.reset(uid);
+        return ResponseEntity.ok(Map.of(
+                "message", "Web browser registration reset",
+                "uid", uid
         ));
     }
 }

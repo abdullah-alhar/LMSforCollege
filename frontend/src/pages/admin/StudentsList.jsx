@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, Users, X, Edit, Trash2, Smartphone, RotateCcw, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Search, UserPlus, Users, X, Edit, Trash2, Smartphone, Monitor, RotateCcw, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import client from '../../api/client';
 import StudentForm from './StudentForm';
 
@@ -28,6 +28,7 @@ const StudentsList = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [deviceResetLoading, setDeviceResetLoading] = useState(false);
+  const [webResetLoading, setWebResetLoading] = useState(false);
 
   const fetchStudents = async () => {
     try {
@@ -147,6 +148,21 @@ const StudentsList = () => {
       setActionError(err.response?.data?.error || 'Failed to reset the mobile device.');
     } finally {
       setDeviceResetLoading(false);
+    }
+  };
+
+  const handleResetWebBrowser = async () => {
+    if (!window.confirm(`Allow "${selectedStudent.username}" to register a different web browser?`)) return;
+    setActionError('');
+    setActionSuccess('');
+    setWebResetLoading(true);
+    try {
+      await client.post(`/admin/students/${encodeURIComponent(selectedStudent.uid)}/reset-web-browser`);
+      setActionSuccess('Web browser access reset. The student can register a different browser at the next login.');
+    } catch (err) {
+      setActionError(err.response?.data?.error || 'Failed to reset web browser access.');
+    } finally {
+      setWebResetLoading(false);
     }
   };
 
@@ -345,6 +361,19 @@ const StudentsList = () => {
                     {deviceResetLoading
                       ? <><Loader2 size={15} className="spin" /> Resetting…</>
                       : <><RotateCcw size={15} /> Reset Mobile App</>}
+                  </button>
+                </div>
+              </div>
+
+              <div className="student-device-reset">
+                <span><Monitor size={20} /></span>
+                <div>
+                  <h4>Web Browser</h4>
+                  <p>Clear this student’s registered browser so they can activate one different browser.</p>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={handleResetWebBrowser} disabled={webResetLoading}>
+                    {webResetLoading
+                      ? <><Loader2 size={15} className="spin" /> Resetting…</>
+                      : <><RotateCcw size={15} /> Reset Web Browser</>}
                   </button>
                 </div>
               </div>

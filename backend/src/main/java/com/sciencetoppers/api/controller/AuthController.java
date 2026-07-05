@@ -32,10 +32,29 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            String token = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
+            String token = authService.login(
+                    loginRequest.getUsername(),
+                    loginRequest.getPassword(),
+                    loginRequest.getBrowserId(),
+                    loginRequest.isRegisterBrowser());
             Map<String, String> response = new HashMap<>();
             response.put("token", token);
             return ResponseEntity.ok(response);
+        } catch (AuthService.BrowserRegistrationRequiredException ex) {
+            return ResponseEntity.status(409).body(Map.of(
+                    "code", "BROWSER_REGISTRATION_REQUIRED",
+                    "error", "Register this browser to continue"
+            ));
+        } catch (AuthService.DifferentBrowserException ex) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "code", "DIFFERENT_BROWSER",
+                    "error", "This account is already registered to another web browser. Contact an administrator to reset web access."
+            ));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "code", "INVALID_BROWSER_ID",
+                    "error", ex.getMessage()
+            ));
         } catch (RuntimeException ex) {
             return ResponseEntity.status(401).body("Unauthorized: " + ex.getMessage());
         }

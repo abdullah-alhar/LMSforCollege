@@ -20,10 +20,17 @@ public class AuthService {
     @Autowired
     private LoginAuditService loginAuditService;
 
+    @Autowired
+    private WebDeviceService webDeviceService;
+
     @Value("${app.super-admin.index:own}")
     private String superAdminIndex;
 
-    public String login(String username, String password) {
+    public String login(
+            String username,
+            String password,
+            String browserId,
+            boolean registerBrowser) {
         Optional<User> userOpt = firebaseService.authenticateUser(username, password);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
@@ -32,6 +39,21 @@ public class AuthService {
                         || (user.getUsername() != null
                             && user.getUsername().equalsIgnoreCase(superAdminIndex.trim())));
             String webRole = superAdmin ? "SUPER_ADMIN" : user.getRole();
+
+            if (!"ADMIN".equalsIgnoreCase(webRole)
+                    && !"SUPER_ADMIN".equalsIgnoreCase(webRole)) {
+                WebDeviceService.Access access = registerBrowser
+                        ? webDeviceService.registerIfAvailable(
+                                user.getUid(), user.getUsername(), browserId)
+                        : webDeviceService.check(user.getUid(), browserId);
+                if (access == WebDeviceService.Access.REGISTRATION_REQUIRED) {
+                    throw new BrowserRegistrationRequiredException();
+                }
+                if (access == WebDeviceService.Access.DIFFERENT_BROWSER) {
+                    throw new DifferentBrowserException();
+                }
+            }
+
             loginAuditService.record(user.getUsername(), webRole, "LOGIN");
             return jwtUtil.generateToken(
                     user.getUsername(),
@@ -40,4 +62,7 @@ public class AuthService {
         }
         throw new RuntimeException("Invalid credentials");
     }
+
+    public static class BrowserRegistrationRequiredException extends RuntimeException {}
+    public static class DifferentBrowserException extends RuntimeException {}
 }

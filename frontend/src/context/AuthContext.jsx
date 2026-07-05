@@ -2,6 +2,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import client from '../api/client';
 
 const AuthContext = createContext(null);
+const BROWSER_ID_KEY = 'scienceToppersBrowserId';
+
+function getBrowserId() {
+  let id = localStorage.getItem(BROWSER_ID_KEY);
+  if (!/^[a-f0-9]{32}$/.test(id || '')) {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    id = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem(BROWSER_ID_KEY, id);
+  }
+  return id;
+}
 
 // Decode a JWT payload without verifying the signature (client-side display only)
 function parseJwt(token) {
@@ -40,9 +52,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (username, password) => {
+  const login = async (username, password, registerBrowser = false) => {
     try {
-      const res = await client.post('/auth/login', { username, password });
+      const res = await client.post('/auth/login', {
+        username,
+        password,
+        browserId: getBrowserId(),
+        registerBrowser,
+      });
       const token = res.data.token;
       sessionStorage.setItem('token', token);
       const claims = parseJwt(token);
@@ -73,10 +90,14 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      return true;
+      return { ok: true };
     } catch (e) {
       console.error('Login failed:', e);
-      return false;
+      return {
+        ok: false,
+        code: e.response?.data?.code || 'LOGIN_FAILED',
+        message: e.response?.data?.error || '',
+      };
     }
   };
 
