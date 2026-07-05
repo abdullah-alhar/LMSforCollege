@@ -1,5 +1,7 @@
 package com.sciencetoppers.api.model;
 
+import java.util.Map;
+
 /**
  * Represents a single content item (video, file, quiz, text) returned to the frontend.
  * The raw YouTube URL is NEVER included here for paid content.
@@ -16,6 +18,7 @@ public class ContentItem {
     private String thumbnailUrl; // YouTube thumbnail URL (computed server-side)
     private String days;        // number of days access lasts (for paid)
     private boolean accessGranted; // true if this student has been explicitly granted access (paid items only)
+    private Map<String, Object> details; // safe display metadata from Firebase
     // content URL is intentionally omitted from this DTO —
     // it is only returned by /api/video/{videoId}/play after access check
 
@@ -48,4 +51,7 @@ public class ContentItem {
 
     public boolean isAccessGranted()                    { return accessGranted; }
     public void setAccessGranted(boolean accessGranted) { this.accessGranted = accessGranted; }
+
+    public Map<String, Object> getDetails() { return details; }
+    public void setDetails(Map<String, Object> details) { this.details = details; }
 }

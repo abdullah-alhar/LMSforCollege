@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, AlertCircle, Loader2, ArrowRight, GraduationCap } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Loader2, ArrowRight, GraduationCap, CreditCard } from 'lucide-react';
+import PaymentMethodsModal from '../components/PaymentMethodsModal';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -10,6 +11,7 @@ const Login = () => {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [mounted, setMounted]   = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
   const { login, user } = useAuth();
   const navigate  = useNavigate();
 
@@ -35,7 +37,7 @@ const Login = () => {
   };
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -44,13 +46,14 @@ const Login = () => {
       fontFamily: "'Inter', sans-serif",
       padding: '1.5rem',
     }}>
-      <div style={{
+      {showRegister && <PaymentMethodsModal subjectId="all" onClose={() => setShowRegister(false)} />}
+      <div className="auth-card" style={{
         width: '100%',
-        maxWidth: 440,
-        background: 'var(--bg-card)',
+        maxWidth: 535,
+        background: 'rgba(255,255,255,.97)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--r-xl)',
-        padding: '3rem 2.5rem',
+        padding: '3.25rem 3.25rem',
         boxShadow: 'var(--shadow-lg)',
         opacity: mounted ? 1 : 0,
         transform: mounted ? 'none' : 'translateY(10px)',
@@ -59,13 +62,13 @@ const Login = () => {
         {/* Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '2rem', justifyContent: 'center' }}>
           <div style={{
-            width: 44, height: 44,
-            background: 'linear-gradient(135deg, var(--teal), #007c80)',
+            width: 52, height: 52,
+            background: 'linear-gradient(135deg, #60A5FA, #3B82F6)',
             borderRadius: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: 'var(--shadow-teal)',
           }}>
-            <GraduationCap size={24} color="#ffffff" />
+            <GraduationCap size={27} color="#ffffff" />
           </div>
           <span style={{
             fontFamily: "'Space Grotesk', sans-serif",
@@ -219,6 +222,12 @@ const Login = () => {
             }
           </button>
         </form>
+
+        <div className="auth-divider"><span>New to Science Toppers?</span></div>
+        <button type="button" className="register-payment-button" onClick={() => setShowRegister(true)}>
+          <CreditCard size={17} />
+          Register
+        </button>
 
         {/* Footer */}
         <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textAlign: 'center', marginTop: '2.5rem' }}>

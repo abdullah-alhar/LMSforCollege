@@ -42,7 +42,7 @@ const FirstLoginModal = () => {
   return (
     <>
       {/* Backdrop */}
-      <div style={{
+      <div className="first-login-backdrop" style={{
         position: 'fixed', inset: 0, zIndex: 9000,
         background: 'rgba(7,11,18,0.92)',
         backdropFilter: 'blur(12px)',
@@ -51,7 +51,7 @@ const FirstLoginModal = () => {
         justifyContent: 'center',
         padding: '1rem',
       }}>
-        <div style={{
+        <div className="first-login-card" style={{
           background: 'var(--bg-card, #0f1623)',
           border: '1px solid rgba(0,212,216,0.2)',
           borderRadius: 20,

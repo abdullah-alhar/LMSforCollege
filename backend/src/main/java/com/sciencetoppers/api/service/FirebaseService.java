@@ -228,6 +228,15 @@ public class FirebaseService {
         if (ytId != null) {
             item.setThumbnailUrl("https://img.youtube.com/vi/" + ytId + "/hqdefault.jpg");
         }
+        Map<String, Object> safeDetails = new LinkedHashMap<>();
+        Set<String> hidden = Set.of("content", "key", "title", "type", "price");
+        itemMap.forEach((field, value) -> {
+            if (!hidden.contains(field) && value != null &&
+                    (value instanceof String || value instanceof Number || value instanceof Boolean)) {
+                safeDetails.put(field, value);
+            }
+        });
+        item.setDetails(safeDetails);
         return item;
     }
 
@@ -510,6 +519,87 @@ public class FirebaseService {
         });
     }
 
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Map<String, Object>> getPaymentDetails(String subjectId) {
+        return readPath(BASE_PATH + "/payments/" + subjectId).thenCompose(value -> {
+            Map<String, Object> details = new LinkedHashMap<>();
+            details.put("subjectId", subjectId);
+            if (value instanceof Map) {
+                details.putAll((Map<String, Object>) value);
+            }
+            if (details.size() > 1) return CompletableFuture.completedFuture(details);
+            return getAllPaymentDetails().thenApply(all -> {
+                Object subject = all.get(subjectId);
+                Object admin = all.get("admin");
+                if (subject instanceof Map) details.putAll((Map<String, Object>) subject);
+                else if (admin instanceof Map) details.putAll((Map<String, Object>) admin);
+                else all.forEach((key, item) -> {
+                    if (isDisplayPaymentValue(item)) details.put(key, item);
+                });
+                return details;
+            });
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Map<String, Object>> getAllPaymentDetails() {
+        return readPath(BASE_PATH + "/payments").thenCompose(value -> {
+            if (value instanceof Map) {
+                Map<String, Object> configured = new LinkedHashMap<>((Map<String, Object>) value);
+                if (!configured.isEmpty()) return CompletableFuture.completedFuture(configured);
+            }
+            return readPath(BASE_PATH).thenApply(root -> {
+                Map<String, Object> discovered = new LinkedHashMap<>();
+                if (root instanceof Map) discoverPaymentData((Map<String, Object>) root, discovered, 0);
+                return discovered;
+            });
+        });
+    }
+
+    public CompletableFuture<Void> savePaymentDetails(String subjectId, Map<String, Object> details) {
+        Map<String, Object> normalized = new LinkedHashMap<>();
+        details.forEach((key, value) -> {
+            if (value != null && !String.valueOf(value).trim().isEmpty()) {
+                normalized.put(key, value);
+            }
+        });
+        return writePath(BASE_PATH + "/payments/" + subjectId, normalized);
+    }
+
+    private boolean isDisplayPaymentValue(Object value) {
+        return value instanceof String || value instanceof Number || value instanceof Boolean;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void discoverPaymentData(Map<String, Object> source, Map<String, Object> result, int depth) {
+        if (depth > 5) return;
+        Set<String> paymentFields = Set.of(
+                "adminname", "contactnumber", "contact", "phone", "whatsapp",
+                "bankdetails", "bankname", "accountnumber", "accountname",
+                "branch", "paymentlink", "amount", "fee");
+        boolean looksLikePaymentMap = source.keySet().stream()
+                .map(key -> key.replaceAll("[^A-Za-z]", "").toLowerCase())
+                .anyMatch(paymentFields::contains);
+        if (looksLikePaymentMap) {
+            source.forEach((key, value) -> {
+                String normalized = key.replaceAll("[^A-Za-z]", "").toLowerCase();
+                if (paymentFields.contains(normalized) && isDisplayPaymentValue(value)) result.put(key, value);
+            });
+        }
+        source.forEach((key, value) -> {
+            if (!(value instanceof Map)) return;
+            String normalized = key.replaceAll("[^A-Za-z]", "").toLowerCase();
+            boolean paymentNode = normalized.contains("payment") || normalized.contains("bank");
+            if (paymentNode) {
+                Map<String, Object> node = new LinkedHashMap<>();
+                discoverPaymentData((Map<String, Object>) value, node, depth + 1);
+                if (!node.isEmpty()) result.put(key, node);
+            } else {
+                discoverPaymentData((Map<String, Object>) value, result, depth + 1);
+            }
+        });
+    }
+
     // ─── Users / Students ────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
@@ -759,6 +849,20 @@ public class FirebaseService {
         pathBuilder.append("/").append(folderName);
 
         return writePath(pathBuilder.toString(), folderData);
+    }
+
+    public CompletableFuture<Void> deleteFolder(String subjectId, String sectionId, String folderId) {
+        if (folderId == null || folderId.isBlank() || folderId.equals(sectionId)) {
+            CompletableFuture<Void> sectionsDelete = deletePath(BASE_PATH + "/sections/" + subjectId + "/" + sectionId);
+            CompletableFuture<Void> extraDelete = deletePath(BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId);
+            CompletableFuture<Void> contentDelete = deletePath(BASE_PATH + "/content/" + subjectId + "/" + sectionId);
+            return CompletableFuture.allOf(sectionsDelete, extraDelete, contentDelete);
+        }
+        CompletableFuture<Void> extraDelete = deletePath(
+                BASE_PATH + "/pathExtra/" + subjectId + "/" + sectionId + "/" + folderId);
+        CompletableFuture<Void> contentDelete = deletePath(
+                BASE_PATH + "/content/" + subjectId + "/" + sectionId + "/" + folderId);
+        return CompletableFuture.allOf(extraDelete, contentDelete);
     }
 
     /**
@@ -1157,12 +1261,8 @@ public class FirebaseService {
     }
 
     public CompletableFuture<Void> addNotice(Map<String, Object> notice) {
-        return CompletableFuture.runAsync(() -> {
-            String url = databaseUrl + BASE_PATH + "/notices.json";
-            java.util.Map<String, Object> wrapper = new java.util.HashMap<>();
-            wrapper.put("global", notice);
-            restTemplate.put(url, wrapper);
-        });
+        String noticeId = "notice-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8);
+        return writePath(BASE_PATH + "/notices/" + noticeId, notice);
     }
 
     public CompletableFuture<Void> deleteNotice(String noticeId) {

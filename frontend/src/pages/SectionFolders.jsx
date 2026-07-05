@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Folder, FolderPlus, X, Loader2, Plus } from 'lucide-react';
+import { ChevronRight, Folder, FolderPlus, X, Loader2, Plus, Trash2 } from 'lucide-react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -124,6 +124,18 @@ const SectionFolders = () => {
 
   const subjectLabel = SUBJECT_LABELS[id?.toLowerCase()] || id?.toUpperCase();
 
+  const deleteFolder = async folder => {
+    if (!window.confirm(`Delete "${folder.title}" and all its content? This cannot be undone.`)) return;
+    try {
+      await client.delete('/admin/content/folder', {
+        data: { subjectId: id, sectionId: decodeURIComponent(sectionId), folderId: folder.id }
+      });
+      setFolders(current => current.filter(item => item.id !== folder.id));
+    } catch (err) {
+      window.alert(err.response?.data?.error || 'Unable to delete this folder.');
+    }
+  };
+
   // If loading or redirecting, just show skeleton
   if (loading) return (
     <div>
@@ -196,18 +208,23 @@ const SectionFolders = () => {
           <p>{isAdmin ? 'Create a folder above, or upload content directly to this section.' : 'No content has been added to this section yet.'}</p>
         </div>
       ) : (
-        <div className="folder-list">
+        <div className="clear-folder-list">
           {folders.map(folder => (
-            <Link key={folder.id} to={`/subject/${id}/section/${encodeURIComponent(sectionId)}/folder/${encodeURIComponent(folder.id)}`}>
-              <div className="folder-item">
-                <span className="folder-icon"><Folder size={22} color="var(--teal-light)" /></span>
-                <div>
+            <article className="clear-folder-row" key={folder.id}>
+              <Link className="clear-folder-link" to={`/subject/${id}/section/${encodeURIComponent(sectionId)}/folder/${encodeURIComponent(folder.id)}`}>
+                <span className="clear-folder-icon"><Folder size={25} /></span>
+                <div className="clear-folder-content">
                   <h3>{folder.title}</h3>
-                  <p className="folder-meta">Tap to view content</p>
+                  <p>Tap to view content</p>
                 </div>
-                <ChevronRight size={18} className="folder-arrow" />
-              </div>
-            </Link>
+                <ChevronRight className="clear-folder-arrow" size={22} />
+              </Link>
+              {isAdmin && (
+                <button className="folder-delete-button" onClick={() => deleteFolder(folder)} title="Delete folder">
+                  <Trash2 size={17} />
+                </button>
+              )}
+            </article>
           ))}
         </div>
       )}

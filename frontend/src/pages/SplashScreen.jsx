@@ -26,11 +26,11 @@ const SplashScreen = () => {
       <div
         className="splash-logo"
         style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(0,212,216,0.2)',
+          background: 'rgba(255,255,255,0.92)',
+          border: '1px solid rgba(59,130,246,0.16)',
           borderRadius: 28,
           padding: '1.25rem 1.75rem',
-          boxShadow: '0 0 60px rgba(0,212,216,0.15), 0 20px 60px rgba(0,0,0,0.5)',
+          boxShadow: '0 24px 60px rgba(51,65,85,0.14)',
           backdropFilter: 'blur(20px)',
           display: 'flex',
           flexDirection: 'column',
@@ -43,13 +43,13 @@ const SplashScreen = () => {
           width: 88,
           height: 88,
           borderRadius: 22,
-          background: 'linear-gradient(135deg, #00d4d8 0%, #0099a8 100%)',
+          background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 0 40px rgba(0,212,216,0.5), 0 8px 32px rgba(0,0,0,0.4)',
+          boxShadow: '0 12px 30px rgba(59,130,246,0.28)',
         }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#070b12" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
             <path d="M6 12v5c3 3 9 3 12 0v-5"/>
           </svg>
@@ -62,7 +62,7 @@ const SplashScreen = () => {
             fontWeight: 800,
             fontSize: '1.75rem',
             letterSpacing: '-0.02em',
-            color: '#ffffff',
+            color: '#334155',
             lineHeight: 1.15,
           }}>
             LMS for College
@@ -71,7 +71,7 @@ const SplashScreen = () => {
             fontFamily: "'Inter', sans-serif",
             fontWeight: 500,
             fontSize: '0.72rem',
-            color: 'rgba(0,212,216,0.8)',
+            color: '#3B82F6',
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
             marginTop: '0.3rem',

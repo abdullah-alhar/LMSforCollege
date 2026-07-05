@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Phone, CreditCard, User, Lock } from 'lucide-react';
 import client from '../api/client';
+import { loadSubjectPayment } from '../api/paymentData';
+import { applyAdminPaymentFallback, formatPaymentDisplayValue, getEssentialPaymentFields, hasEssentialPaymentFields } from '../utils/paymentFormat';
 
 const SUBJECT_LABELS = {
   bio:  'Biology',
@@ -9,6 +11,7 @@ const SUBJECT_LABELS = {
   chem: 'Chemistry',
   math: 'Mathematics',
 };
+
 
 /* Orbital loader (inline mini version) */
 const MiniLoader = () => (
@@ -31,15 +34,15 @@ const LockedContent = () => {
     const fetchInfo = async () => {
       try {
         const res = await client.get(`/payment-info/${subjectId}`);
-        setInfo(res.data);
-        if (!res.data.adminName && !res.data.contactNumber && !res.data.bankDetails) {
-          const adminRes = await client.get('/payment-info/admin');
-          setInfo(adminRes.data);
-        }
+        const directSubject = hasEssentialPaymentFields(res.data) ? res.data : await loadSubjectPayment(subjectId);
+        const adminRes = await client.get('/payment-info/admin').catch(() => ({ data: {} }));
+        const admin = hasEssentialPaymentFields(adminRes.data) ? adminRes.data : await loadSubjectPayment('admin');
+        setInfo(applyAdminPaymentFallback(directSubject, admin));
       } catch {
         try {
-          const adminRes = await client.get('/payment-info/admin');
-          setInfo(adminRes.data);
+          const directSubject = await loadSubjectPayment(subjectId);
+          const admin = await loadSubjectPayment('admin');
+          setInfo(applyAdminPaymentFallback(directSubject, admin));
         } catch {
           setInfo({});
         }
@@ -51,6 +54,7 @@ const LockedContent = () => {
   }, [subjectId]);
 
   const subjectLabel = SUBJECT_LABELS[subjectId?.toLowerCase()] || subjectId?.toUpperCase();
+  const paymentGroups = getEssentialPaymentFields(info || {});
 
   return (
     <div className="info-page">
@@ -58,13 +62,13 @@ const LockedContent = () => {
       <div style={{
         width: 96, height: 96,
         borderRadius: '50%',
-        background: 'rgba(255,107,53,0.1)',
-        border: '1px solid rgba(255,107,53,0.3)',
+        background: 'rgba(96,165,250,0.12)',
+        border: '1px solid rgba(59,130,246,0.25)',
         display: 'flex', alignItems:'center', justifyContent:'center',
         animation: 'iconFloat 3s ease-in-out infinite',
-        boxShadow: '0 0 32px rgba(255,107,53,0.15)',
+        boxShadow: '0 12px 32px rgba(59,130,246,0.14)',
       }}>
-        <Lock size={40} color="var(--orange)" />
+        <Lock size={40} color="var(--color-primary)" />
       </div>
 
       <div style={{ textAlign:'center' }}>
@@ -78,51 +82,30 @@ const LockedContent = () => {
       {loading ? (
         <MiniLoader />
       ) : (
-        <div className="payment-card anim-in">
-          <h3 style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
-            <CreditCard size={18} color="var(--teal)" />
-            Payment & Contact Details
-          </h3>
-
-          {info?.adminName && (
-            <div className="payment-row">
-              <span className="label"><User size={12} style={{ verticalAlign:'middle', marginRight:4 }} />Admin Name</span>
-              <span className="value">{info.adminName}</span>
-            </div>
+        <div className="locked-payment-sheet anim-in">
+          <div className="payment-sheet-title">Payment & Contact</div>
+          {paymentGroups.contact.length > 0 && (
+            <section className="essential-payment-block">
+              <h3><Phone size={17} /> Contact Details</h3>
+              <div className="essential-payment-values">
+                {paymentGroups.contact.map((row, index) => <div className="payment-detail-value" key={`${row.path}-${index}`}>{formatPaymentDisplayValue(row.value)}</div>)}
+              </div>
+            </section>
           )}
-          {info?.contactNumber && (
-            <div className="payment-row">
-              <span className="label"><Phone size={12} style={{ verticalAlign:'middle', marginRight:4 }} />Contact</span>
-              <span className="value">
-                <a href={`tel:${info.contactNumber}`} style={{ color:'var(--teal)' }}>{info.contactNumber}</a>
-              </span>
-            </div>
-          )}
-          {info?.bankDetails && (
-            <div className="payment-row">
-              <span className="label"><CreditCard size={12} style={{ verticalAlign:'middle', marginRight:4 }} />Bank Details</span>
-              <span className="value" style={{ whiteSpace:'pre-line' }}>{info.bankDetails}</span>
-            </div>
+          {paymentGroups.payment.length > 0 && (
+            <section className="essential-payment-block">
+              <h3><CreditCard size={17} /> Payment Details</h3>
+              <div className="essential-payment-values">
+                {paymentGroups.payment.map((row, index) => <div className="payment-detail-value" key={`${row.path}-${index}`}>{formatPaymentDisplayValue(row.value)}</div>)}
+              </div>
+            </section>
           )}
 
-          {!info?.adminName && !info?.contactNumber && !info?.bankDetails && (
+          {!hasEssentialPaymentFields(info) && (
             <p style={{ color:'var(--text-muted)', fontSize:'0.875rem', padding:'0.5rem 0' }}>
               Payment details not configured. Please contact the admin directly.
             </p>
           )}
-
-          <div style={{
-            marginTop:'1.25rem',
-            padding:'0.875rem',
-            background:'rgba(0,212,216,0.06)',
-            border:'1px solid rgba(0,212,216,0.15)',
-            borderRadius:'var(--r-sm)',
-            fontSize:'0.82rem',
-            color:'var(--text-muted)',
-            lineHeight:'1.6',
-          }}>
-            💡 After payment, send proof to the admin. Access will be granted within minutes.
-          </div>
         </div>
       )}
 

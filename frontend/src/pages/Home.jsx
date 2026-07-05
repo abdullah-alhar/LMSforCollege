@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { ChevronRight, Sparkles, BookOpen } from 'lucide-react';
+import { ChevronRight, Sparkles, BookOpen, PlayCircle } from 'lucide-react';
+import CustomVideoPlayer from '../components/CustomVideoPlayer';
 
 const BioIcon = () => <img src="/bio.gif" alt="Biology" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }} />;
 const PhyIcon = () => <img src="/phy.gif" alt="Physics" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }} />;
@@ -24,19 +25,52 @@ const Skeleton = () => (
   </div>
 );
 
+const youtubeId = url => {
+  if (!url) return null;
+  const match = String(url).match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+  return match?.[1] || null;
+};
+
+const PromoCard = ({ promo }) => {
+  const [hovered, setHovered] = useState(false);
+  const url = promo.content || promo.url || promo.videoUrl || promo.link;
+  const id = youtubeId(url);
+  if (!url) return null;
+  return (
+    <article className="promo-slide-card" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+      <div className="promo-slide-media">
+        {hovered ? (
+          <CustomVideoPlayer url={url} title={promo.title || 'Promotion'} />
+        ) : id ? (
+          <img src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`} alt={promo.title || 'Promotion'} />
+        ) : (
+          <div className="promo-fallback"><PlayCircle size={34} /></div>
+        )}
+        {!hovered && <span className="promo-play-hint"><PlayCircle size={17} /> Hover to play</span>}
+      </div>
+      <div className="promo-slide-copy">
+        <h3>{promo.title || 'Featured lesson'}</h3>
+        <p>{promo.desc || promo.description || 'Discover the latest from Science Toppers.'}</p>
+      </div>
+    </article>
+  );
+};
+
 const Home = () => {
   const { user } = useAuth();
   const [subjects, setSubjects] = useState([]);
   const [quote, setQuote]       = useState('');
+  const [promotions, setPromotions] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [subR, quoteR] = await Promise.allSettled([
+        const [subR, quoteR, promoR] = await Promise.allSettled([
           client.get('/subjects'),
           client.get('/content/quotes'),
+          client.get('/content/promotions'),
         ]);
         if (subR.status === 'fulfilled') setSubjects(subR.value.data);
         else throw subR.reason;
@@ -47,6 +81,10 @@ const Home = () => {
             const vals = Object.values(arr);
             if (vals.length) setQuote(vals[Math.floor(Math.random() * vals.length)]);
           }
+        }
+        if (promoR.status === 'fulfilled') {
+          const items = Array.isArray(promoR.value.data) ? promoR.value.data : Object.values(promoR.value.data || {});
+          setPromotions(items);
         }
       } catch (e) {
         setError(e.response?.data?.message || e.message || 'Failed to load subjects');
@@ -70,6 +108,22 @@ const Home = () => {
           Pick a subject to continue learning
         </p>
       </div>
+
+      {promotions.length > 0 && (
+        <section className="promo-rail-section anim-in anim-in-1">
+          <div className="promo-rail-heading">
+            <span className="eyebrow"><PlayCircle size={15} /> Featured</span>
+            <small>Move over a video to play</small>
+          </div>
+          <div className="promo-rail">
+            <div className={`promo-track ${promotions.length > 2 ? 'is-moving' : ''}`}>
+              {[...promotions, ...(promotions.length > 2 ? promotions : [])].map((promo, index) => (
+                <PromoCard key={`${promo.id || promo.title || 'promo'}-${index}`} promo={promo} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Quote */}
       {quote && (

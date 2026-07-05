@@ -232,4 +232,23 @@ public class AdminContentController {
             return ResponseEntity.status(500).body(Map.of("error", "Failed to delete video: " + e.getMessage()));
         }
     }
+
+    @DeleteMapping("/folder")
+    public ResponseEntity<?> deleteFolder(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader)
+            throws ExecutionException, InterruptedException {
+        String owner = resolveOwner(authHeader);
+        String subjectId = body.get("subjectId") != null ? String.valueOf(body.get("subjectId")) : null;
+        String sectionId = body.get("sectionId") != null ? String.valueOf(body.get("sectionId")) : null;
+        String folderId = body.get("folderId") != null ? String.valueOf(body.get("folderId")) : sectionId;
+        if (subjectId == null || sectionId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "subjectId and sectionId are required"));
+        }
+        if (owner != null && !owner.isBlank() && !owner.equalsIgnoreCase(subjectId)) {
+            return ResponseEntity.status(403).body(Map.of("error", "You are only allowed to manage subject: " + owner));
+        }
+        firebaseService.deleteFolder(subjectId, sectionId, folderId).get();
+        return ResponseEntity.ok(Map.of("message", "Folder deleted"));
+    }
 }

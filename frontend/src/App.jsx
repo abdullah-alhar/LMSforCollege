@@ -5,6 +5,7 @@ import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import FirstLoginModal from './components/FirstLoginModal';
+import AppErrorBoundary from './components/AppErrorBoundary';
 
 import SplashScreen   from './pages/SplashScreen';
 import Login          from './pages/Login';
@@ -16,6 +17,8 @@ import VideoPlayer    from './pages/VideoPlayer';
 import LockedContent  from './pages/LockedContent';
 import ExpiredAccess  from './pages/ExpiredAccess';
 import ProfileSettings from './pages/ProfileSettings';
+import PaymentDetails from './pages/PaymentDetails';
+import NoticesPage from './pages/NoticesPage';
 
 import Dashboard      from './pages/admin/Dashboard';
 import StudentsList   from './pages/admin/StudentsList';
@@ -37,7 +40,7 @@ const AppShell = () => {
     !isBare;
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isBare ? 'bare-layout' : 'sidebar-layout'}`}>
       {!isBare && <Navbar />}
 
       {/* First-login profile completion modal (non-skippable) */}
@@ -50,10 +53,13 @@ const AppShell = () => {
         </Routes>
       ) : (
         <main className="main-content">
+          <AppErrorBoundary key={location.pathname}>
           <Routes>
             {/* Student routes */}
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+            <Route path="/payments" element={<ProtectedRoute><PaymentDetails /></ProtectedRoute>} />
+            <Route path="/notices" element={<ProtectedRoute><NoticesPage /></ProtectedRoute>} />
             <Route path="/subject/:id" element={<ProtectedRoute><SubjectFolders /></ProtectedRoute>} />
             <Route path="/subject/:id/section/:sectionId" element={<ProtectedRoute><SectionFolders /></ProtectedRoute>} />
             <Route path="/subject/:id/section/:sectionId/folder/:folderId" element={<ProtectedRoute><VideoList /></ProtectedRoute>} />
@@ -65,7 +71,10 @@ const AppShell = () => {
             <Route path="/admin" element={<ProtectedRoute requireAdmin><Dashboard /></ProtectedRoute>} />
             <Route path="/admin/students" element={<ProtectedRoute requireAdmin><StudentsList /></ProtectedRoute>} />
             <Route path="/admin/students/new" element={<ProtectedRoute requireAdmin><StudentForm /></ProtectedRoute>} />
+            <Route path="/admin/notices" element={<ProtectedRoute requireAdmin><NoticesPage /></ProtectedRoute>} />
+            <Route path="/admin/payments" element={<ProtectedRoute requireAdmin><PaymentDetails adminMode /></ProtectedRoute>} />
           </Routes>
+          </AppErrorBoundary>
         </main>
       )}
     </div>

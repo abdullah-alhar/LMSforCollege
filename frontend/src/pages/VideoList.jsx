@@ -24,7 +24,7 @@ const SkeletonVideos = () => (
 );
 
 // Modal shown when a student tries to access paid content they don't have access to
-const LockedModal = ({ onClose }) => (
+const LockedModal = ({ onClose, subjectId }) => (
   <div className="modal-backdrop" onClick={onClose}>
     <div className="modal-box" onClick={e => e.stopPropagation()}>
       <div className="modal-icon">🔒</div>
@@ -37,6 +37,9 @@ const LockedModal = ({ onClose }) => (
         <button className="btn btn-ghost btn-sm" onClick={onClose}>
           <X size={14} /> Close
         </button>
+        <Link className="btn btn-sm" to={`/locked/${subjectId}`}>
+          Contact Us
+        </Link>
       </div>
     </div>
   </div>
@@ -378,7 +381,16 @@ const VideoList = () => {
     }
   };
 
-  const isPaid = (v) => v.price === 'p' || v.price === 'paid';
+  const isPaid = (v) => {
+    const value = String(v.price ?? '').toLowerCase();
+    return value === 'p' || value === 'paid' || (!!value && !['f', 'free', '0'].includes(value));
+  };
+  const displayAmount = v => {
+    const amount = v.details?.amount ?? v.details?.paymentAmount ?? v.details?.fee;
+    if (amount !== undefined && amount !== null && String(amount).trim()) return String(amount);
+    const price = String(v.price ?? '');
+    return !['p', 'paid', 'f', 'free', '0', ''].includes(price.toLowerCase()) ? price : null;
+  };
   const subjectLabel = SUBJECT_LABELS[id?.toLowerCase()] || id?.toUpperCase();
 
   const getIconForType = (type) => {
@@ -393,7 +405,7 @@ const VideoList = () => {
 
   return (
     <div>
-      {lockedModal && <LockedModal onClose={() => setLockedModal(false)} />}
+      {lockedModal && <LockedModal subjectId={id} onClose={() => setLockedModal(false)} />}
       {grantModalVideo && (
         <GrantAccessModal
           video={grantModalVideo}
@@ -508,6 +520,12 @@ const VideoList = () => {
 
               <div className="video-info">
                 <h4>{v.title}</h4>
+                {displayAmount(v) && (
+                  <div className="video-price-display">
+                    <small>Course price</small>
+                    <strong><span>LKR</span> {displayAmount(v)}</strong>
+                  </div>
+                )}
                 <div className="card-actions">
                   <span className={`badge ${isPaid(v) ? 'badge-paid' : 'badge-free'}`}>
                     {isPaid(v) ? '🔒 PAID' : '✓ FREE'}

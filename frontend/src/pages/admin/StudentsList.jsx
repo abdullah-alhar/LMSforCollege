@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, UserPlus, Users, X, Edit, Trash2, Key, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import client from '../../api/client';
+import StudentForm from './StudentForm';
 
 const SkeletonRows = () => (
   <div style={{ display:'flex', flexDirection:'column', gap:'0.5rem' }}>
@@ -25,6 +26,7 @@ const StudentsList = () => {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAddStudent, setShowAddStudent] = useState(false);
 
   const fetchStudents = async () => {
     try {
@@ -146,9 +148,9 @@ const StudentsList = () => {
             {loading ? 'Loading…' : `${students.length} registered student${students.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <Link to="/admin/students/new" className="btn btn-sm">
+        <button type="button" className="btn btn-sm" onClick={() => setShowAddStudent(true)}>
           <UserPlus size={15} /> Add Student
-        </Link>
+        </button>
       </div>
 
       {/* Search */}
@@ -236,11 +238,18 @@ const StudentsList = () => {
         </div>
       )}
 
-      {/* Slide-in Edit Panel */}
+      {showAddStudent && (
+        <StudentForm
+          modalMode
+          onClose={() => setShowAddStudent(false)}
+          onCreated={() => { setLoading(true); fetchStudents(); }}
+        />
+      )}
+
+      {/* Centered Edit Student Modal */}
       {selectedStudent && (
-        <>
-          <div className="slide-panel-backdrop" onClick={handleClosePanel} />
-          <div className="slide-panel">
+        <div className="modal-backdrop student-modal-backdrop" onClick={handleClosePanel}>
+          <div className="student-edit-modal" onClick={event => event.stopPropagation()}>
             <div className="slide-panel-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Edit size={18} color="var(--teal)" /> Edit Student
@@ -356,7 +365,7 @@ const StudentsList = () => {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       <style>{`

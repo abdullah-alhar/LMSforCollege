@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, UserPlus, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, UserPlus, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import client from '../../api/client';
 
-const StudentForm = () => {
+const StudentForm = ({ modalMode = false, onClose, onCreated }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', password: '', index: '' });
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,12 @@ const StudentForm = () => {
         role: 'STUDENT',
       });
       setSuccess('Student created successfully! Redirecting…');
-      setTimeout(() => navigate('/admin/students'), 1500);
+      if (modalMode) {
+        if (onCreated) onCreated();
+        setTimeout(() => onClose?.(), 700);
+      } else {
+        setTimeout(() => navigate('/admin/students'), 1500);
+      }
     } catch (err) {
       const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create student';
       setError(msg);
@@ -37,8 +42,10 @@ const StudentForm = () => {
     }
   };
 
-  return (
-    <div>
+  const content = (
+    <div className={modalMode ? 'student-form-modal' : ''} onClick={event => event.stopPropagation()}>
+      {modalMode && <button className="icon-button modal-close" onClick={onClose} aria-label="Close"><X size={18} /></button>}
+      {!modalMode && (
       <nav className="breadcrumb">
         <Link to="/admin">Admin</Link>
         <span className="sep">›</span>
@@ -46,6 +53,7 @@ const StudentForm = () => {
         <span className="sep">›</span>
         <span>New Student</span>
       </nav>
+      )}
 
       <div className="page-header anim-in">
         <h2 style={{ fontSize:'1.5rem' }}>Add New Student</h2>
@@ -54,7 +62,7 @@ const StudentForm = () => {
         </p>
       </div>
 
-      <div className="card anim-in anim-in-1" style={{ maxWidth: 500 }}>
+      <div className={modalMode ? 'anim-in anim-in-1' : 'card anim-in anim-in-1'} style={{ maxWidth: 500 }}>
         {error && (
           <div style={{
             display:'flex', alignItems:'center', gap:'0.5rem',
@@ -122,7 +130,7 @@ const StudentForm = () => {
                 : <><UserPlus size={16} /> Create Student</>
               }
             </button>
-            <button type="button" className="btn btn-ghost" onClick={() => navigate('/admin/students')}>
+            <button type="button" className="btn btn-ghost" onClick={() => modalMode ? onClose?.() : navigate('/admin/students')}>
               Cancel
             </button>
           </div>
@@ -135,6 +143,8 @@ const StudentForm = () => {
       `}</style>
     </div>
   );
+
+  return modalMode ? <div className="modal-backdrop student-modal-backdrop" onClick={onClose}>{content}</div> : content;
 };
 
 export default StudentForm;

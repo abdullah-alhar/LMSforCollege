@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, ArrowRight, BookOpen, Video, ShieldCheck, TrendingUp, Zap } from 'lucide-react';
+import { Users, ArrowRight, BookOpen, ShieldCheck, Zap, Image, Type, Bold, Italic, Link as LinkIcon, List } from 'lucide-react';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import ProfileSettings from '../ProfileSettings';
@@ -126,6 +126,8 @@ const Dashboard = () => {
 const PostNoticeForm = () => {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
+  const [type, setType] = useState('text');
+  const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   
@@ -135,10 +137,11 @@ const PostNoticeForm = () => {
     setLoading(true);
     setSuccess('');
     try {
-      await client.post('/notices', { title, desc });
+      await client.post('/notices', { title, desc, type, imageUrl });
       setSuccess('Notice posted!');
       setTitle('');
       setDesc('');
+      setImageUrl('');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       alert('Failed to post notice');
@@ -148,12 +151,16 @@ const PostNoticeForm = () => {
   };
 
   return (
-    <div className="card anim-in anim-in-2" style={{ borderTop: '2px solid var(--teal)' }}>
+    <div className="notice-composer card anim-in anim-in-2">
       <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <Zap size={16} color="var(--teal)" /> Post Global Notice
       </h3>
       {success && <div style={{ fontSize: '0.8rem', color: '#10b981', marginBottom: '1rem' }}>✓ {success}</div>}
       <form onSubmit={handlePost}>
+        <div className="notice-type-switch">
+          <button type="button" className={type === 'text' ? 'active' : ''} onClick={() => setType('text')}><Type size={15} /> Text</button>
+          <button type="button" className={type === 'image' ? 'active' : ''} onClick={() => setType('image')}><Image size={15} /> Image</button>
+        </div>
         <div className="input-group" style={{ marginBottom: '0.75rem' }}>
           <input 
             placeholder="Notice Title" 
@@ -163,15 +170,21 @@ const PostNoticeForm = () => {
             style={{ fontSize: '0.85rem' }}
           />
         </div>
-        <div className="input-group" style={{ marginBottom: '1rem' }}>
-          <textarea 
-            placeholder="Details (Optional)" 
-            value={desc} 
-            onChange={e => setDesc(e.target.value)} 
-            rows={2}
-            style={{ resize: 'vertical', fontSize: '0.85rem' }}
-          />
-        </div>
+        {type === 'text' ? (
+          <>
+            <div className="notice-toolbar"><Bold size={15}/><Italic size={15}/><span>H1</span><span>H2</span><LinkIcon size={15}/><List size={15}/></div>
+            <div className="input-group notice-editor">
+              <textarea placeholder="Write your notice…" value={desc} onChange={e => setDesc(e.target.value)} rows={5} />
+            </div>
+            <div className="notice-preview"><small>Live preview</small><h4>{title || 'Notice title'}</h4><p>{desc || 'Your notice will appear here.'}</p></div>
+          </>
+        ) : (
+          <div className="input-group" style={{ marginBottom:'1rem' }}>
+            <label>Image URL</label>
+            <input type="url" placeholder="https://…" value={imageUrl} onChange={e => setImageUrl(e.target.value)} required />
+            {imageUrl && <img className="notice-image-preview" src={imageUrl} alt="Notice preview" />}
+          </div>
+        )}
         <button type="submit" className="btn btn-sm" disabled={loading || !title.trim()}>
           {loading ? 'Posting...' : 'Post Notice'}
         </button>

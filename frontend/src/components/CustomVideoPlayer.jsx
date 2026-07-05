@@ -319,6 +319,34 @@ const CustomVideoPlayer = ({ url, title }) => {
         }}
       />
 
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+        title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+        aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
+        style={{
+          position: 'absolute',
+          top: 14,
+          right: 14,
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+          padding: '9px 12px',
+          border: '1px solid rgba(255,255,255,.24)',
+          borderRadius: 10,
+          color: '#fff',
+          background: 'rgba(4,10,18,.76)',
+          backdropFilter: 'blur(10px)',
+          fontSize: 12,
+          fontWeight: 700,
+          boxShadow: '0 5px 18px rgba(0,0,0,.24)',
+        }}
+      >
+        {isFullscreen ? <Minimize size={17} /> : <Maximize size={17} />}
+        <span>{isFullscreen ? 'Exit' : 'Full screen'}</span>
+      </button>
+
       {/* ── Control Bar ── */}
       <div
         style={{
