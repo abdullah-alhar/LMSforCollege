@@ -1,13 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import { Bell, Image, Send, Trash2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Bell, Bold, Heading1, Heading2, Heading3, Image, Italic,
+  Link as LinkIcon, List, Send, Trash2
+} from 'lucide-react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
+
+const displayText = value => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.map(displayText).filter(Boolean).join('\n');
+  if (typeof value === 'object') return Object.values(value).map(displayText).filter(Boolean).join('\n');
+  return '';
+};
+
+const InlineMarkdown = ({ children }) => {
+  const parts = String(children || '').split(/(\*\*.+?\*\*|\*.+?\*|\[[^\]]+\]\([^)]+\))/g);
+  return parts.map((part, index) => {
+    if (/^\*\*.+\*\*$/.test(part)) return <strong key={index}>{part.slice(2, -2)}</strong>;
+    if (/^\*.+\*$/.test(part)) return <em key={index}>{part.slice(1, -1)}</em>;
+    const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (link) return <a key={index} href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>;
+    return <React.Fragment key={index}>{part}</React.Fragment>;
+  });
+};
+
+const MarkdownNotice = ({ value }) => (
+  <div className="notice-markdown">
+    {String(value || '').split('\n').map((line, index) => {
+      const heading = line.match(/^(#{1,3})\s+(.*)$/);
+      if (heading) {
+        const Tag = `h${heading[1].length}`;
+        return <Tag key={index}><InlineMarkdown>{heading[2]}</InlineMarkdown></Tag>;
+      }
+      const list = line.match(/^[-*]\s+(.*)$/);
+      if (list) return <div className="notice-list-line" key={index}><span>•</span><InlineMarkdown>{list[1]}</InlineMarkdown></div>;
+      return line ? <p key={index}><InlineMarkdown>{line}</InlineMarkdown></p> : <br key={index} />;
+    })}
+  </div>
+);
 
 const NoticesPage = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+  const inputRef = useRef(null);
   const [notices, setNotices] = useState([]);
-  const [form, setForm] = useState({ title: '', desc: '', type: 'text', imageUrl: '' });
+  const [content, setContent] = useState('');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -18,26 +56,42 @@ const NoticesPage = () => {
       .catch(() => setStatus('Notices could not be loaded.'))
       .finally(() => setLoading(false));
   };
+
   useEffect(() => {
     load();
   }, []);
 
-  const displayText = value => {
-    if (value === null || value === undefined) return '';
-    if (typeof value === 'string' || typeof value === 'number') return String(value);
-    if (Array.isArray(value)) return value.map(displayText).filter(Boolean).join('\n');
-    if (typeof value === 'object') {
-      return Object.values(value).map(displayText).filter(Boolean).join('\n');
+  const replaceSelection = (before, after = '', linePrefix = false) => {
+    const input = inputRef.current;
+    if (!input) return;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const selected = content.slice(start, end);
+    let insert;
+    let replaceStart = start;
+    if (linePrefix) {
+      replaceStart = content.lastIndexOf('\n', start - 1) + 1;
+      insert = `${before}${content.slice(replaceStart, end)}`;
+    } else {
+      insert = `${before}${selected || 'text'}${after}`;
     }
-    return '';
+    const next = content.slice(0, replaceStart) + insert + content.slice(end);
+    setContent(next);
+    requestAnimationFrame(() => {
+      input.focus();
+      const cursor = replaceStart + insert.length;
+      input.setSelectionRange(cursor, cursor);
+    });
   };
 
   const submit = async event => {
     event.preventDefault();
+    const title = content.trim();
+    if (!title) return;
     setStatus('');
     try {
-      await client.post('/notices', form);
-      setForm({ title: '', desc: '', type: 'text', imageUrl: '' });
+      await client.post('/notices', { title, type: 't' });
+      setContent('');
       setStatus('Notice published successfully.');
       await load();
     } catch (error) {
@@ -53,33 +107,44 @@ const NoticesPage = () => {
 
   return (
     <div>
-      <div className="page-header"><h1>Notices</h1><p>{isAdmin ? 'Create and manage student announcements.' : 'Latest announcements from your learning platform.'}</p></div>
+      <div className="page-header"><h1>Notices</h1><p>{isAdmin ? 'Create mobile-compatible announcements with Markdown formatting.' : 'Latest announcements from your learning platform.'}</p></div>
       {isAdmin && (
         <form className="notice-page-composer card" onSubmit={submit}>
-          <div className="notice-type-switch">
-            <button type="button" className={form.type === 'text' ? 'active' : ''} onClick={() => setForm(current => ({ ...current, type: 'text' }))}>Text</button>
-            <button type="button" className={form.type === 'image' ? 'active' : ''} onClick={() => setForm(current => ({ ...current, type: 'image' }))}><Image size={15} /> Image</button>
+          <div className="notice-input-label">Input</div>
+          <div className="notice-markdown-editor">
+            <textarea ref={inputRef} rows="8" value={content} onChange={event => setContent(event.target.value)} placeholder="Write your notice…" required />
+            <div className="notice-toolbar" aria-label="Text formatting">
+              <button type="button" title="Bold" onClick={() => replaceSelection('**', '**')}><Bold size={16} /></button>
+              <button type="button" title="Italic" onClick={() => replaceSelection('*', '*')}><Italic size={16} /></button>
+              <button type="button" title="Heading 1" onClick={() => replaceSelection('# ', '', true)}><Heading1 size={18} /></button>
+              <button type="button" title="Heading 2" onClick={() => replaceSelection('## ', '', true)}><Heading2 size={18} /></button>
+              <button type="button" title="Heading 3" onClick={() => replaceSelection('### ', '', true)}><Heading3 size={18} /></button>
+              <button type="button" title="Link" onClick={() => replaceSelection('[', '](https://)')}><LinkIcon size={16} /></button>
+              <button type="button" title="List" onClick={() => replaceSelection('- ', '', true)}><List size={17} /></button>
+            </div>
           </div>
-          <div className="input-group"><label>Title</label><input value={form.title} onChange={event => setForm(current => ({ ...current, title: event.target.value }))} required /></div>
-          <div className="input-group"><label>Description</label><textarea rows="5" value={form.desc} onChange={event => setForm(current => ({ ...current, desc: event.target.value }))} /></div>
-          {form.type === 'image' && <div className="input-group"><label>Image URL</label><input type="url" value={form.imageUrl} onChange={event => setForm(current => ({ ...current, imageUrl: event.target.value }))} /></div>}
+          <div className="notice-input-label output">Output</div>
+          <div className="notice-output-preview">
+            {content ? <MarkdownNotice value={content} /> : <span>Your formatted notice will appear here.</span>}
+          </div>
           {status && <div className="form-alert">{status}</div>}
-          <button className="btn"><Send size={16} /> Publish notice</button>
+          <button className="btn" disabled={!content.trim()}><Send size={16} /> Publish notice</button>
         </form>
       )}
+
       <div className="notice-page-list">
         {loading && <div className="state-box">Loading notices…</div>}
         {notices.map((rawNotice, index) => {
           const notice = rawNotice && typeof rawNotice === 'object' ? rawNotice : { title: rawNotice };
-          const title = displayText(notice.title) || 'Notice';
-          const description = displayText(notice.desc || notice.content);
-          const imageUrl = typeof notice.imageUrl === 'string' ? notice.imageUrl : '';
+          const title = displayText(notice.title);
+          const noticeType = String(notice.type || 't').toLowerCase();
+          const isImage = noticeType === 'i' || noticeType === 'image';
           return (
-          <article className="card notice-page-item" key={displayText(notice.id) || `${title}-${index}`}>
-            <span className="notification-icon"><Bell size={18} /></span>
-            <div><h3>{title}</h3>{description && <p>{description}</p>}{imageUrl && <img src={imageUrl} alt="" />}</div>
-            {isAdmin && notice.id && <button onClick={() => remove(notice.id)} aria-label="Delete notice"><Trash2 size={17} /></button>}
-          </article>
+            <article className="card notice-page-item" key={displayText(notice.id) || `${title}-${index}`}>
+              <span className="notification-icon">{isImage ? <Image size={18} /> : <Bell size={18} />}</span>
+              <div>{isImage ? <img src={title} alt="Notice" /> : <MarkdownNotice value={title || displayText(notice.desc || notice.content)} />}</div>
+              {isAdmin && notice.id && <button onClick={() => remove(notice.id)} aria-label="Delete notice"><Trash2 size={17} /></button>}
+            </article>
           );
         })}
         {!loading && !notices.length && <div className="state-box">No notices available.</div>}

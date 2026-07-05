@@ -44,7 +44,7 @@ public class PaymentInfoController {
         } catch (Exception exception) {
             return org.springframework.http.ResponseEntity.status(401).body(Map.of("error", "Invalid session"));
         }
-        if (!"ADMIN".equalsIgnoreCase(role)) {
+        if (!"ADMIN".equalsIgnoreCase(role) && !"SUPER_ADMIN".equalsIgnoreCase(role)) {
             return org.springframework.http.ResponseEntity.status(403).body(Map.of("error", "Admin access required"));
         }
         firebaseService.savePaymentDetails(subjectId, details).get();

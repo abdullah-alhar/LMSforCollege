@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, UserPlus, Users, X, Edit, Trash2, Key, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Search, UserPlus, Users, X, Edit, Trash2, Smartphone, RotateCcw, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import client from '../../api/client';
 import StudentForm from './StudentForm';
 
@@ -27,6 +27,7 @@ const StudentsList = () => {
   const [actionSuccess, setActionSuccess] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
+  const [deviceResetLoading, setDeviceResetLoading] = useState(false);
 
   const fetchStudents = async () => {
     try {
@@ -130,6 +131,22 @@ const StudentsList = () => {
     } catch (err) {
       setActionError(err.response?.data?.error || 'Failed to delete student');
       setDeleteLoading(false);
+    }
+  };
+
+  const handleResetMobileDevice = async () => {
+    if (!window.confirm(`Reset the registered mobile device for "${selectedStudent.username}"? They will need to register their phone again in the mobile app.`)) return;
+    setActionError('');
+    setActionSuccess('');
+    setDeviceResetLoading(true);
+    try {
+      const response = await client.post(`/admin/students/${encodeURIComponent(selectedStudent.uid)}/reset-mobile-device`);
+      const cleared = response.data?.clearedPaths;
+      setActionSuccess(`Mobile app device reset${cleared ? ` (${cleared} registration paths cleared)` : ''}. The student can now register a device again.`);
+    } catch (err) {
+      setActionError(err.response?.data?.error || 'Failed to reset the mobile device.');
+    } finally {
+      setDeviceResetLoading(false);
     }
   };
 
@@ -318,6 +335,19 @@ const StudentsList = () => {
                   {editLoading ? <><Loader2 size={16} className="spin" /> Updating...</> : 'Save Changes'}
                 </button>
               </form>
+
+              <div className="student-device-reset">
+                <span><Smartphone size={20} /></span>
+                <div>
+                  <h4>Mobile App Device</h4>
+                  <p>Clear this student’s registered phone so they can activate the mobile app on another device.</p>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={handleResetMobileDevice} disabled={deviceResetLoading}>
+                    {deviceResetLoading
+                      ? <><Loader2 size={15} className="spin" /> Resetting…</>
+                      : <><RotateCcw size={15} /> Reset Mobile App</>}
+                  </button>
+                </div>
+              </div>
               
               <div style={{ height: '1px', background: 'var(--border)', margin: '1rem 0 2rem' }} />
               

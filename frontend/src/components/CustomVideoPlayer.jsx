@@ -47,9 +47,10 @@ const loadYtApi = (callback) => {
   }
 };
 
-const CustomVideoPlayer = ({ url, title }) => {
+const CustomVideoPlayer = ({ url, title, watermark }) => {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
+  const nativeVideoRef = useRef(null);
   const iframeContainerRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const seekingRef = useRef(false);
@@ -72,6 +73,56 @@ const CustomVideoPlayer = ({ url, title }) => {
   const hideControlsTimer = useRef(null);
 
   const videoId = extractYouTubeId(url);
+
+  // ── Init protected native player for non-YouTube sources ────────────────
+  useEffect(() => {
+    if (videoId || !nativeVideoRef.current) return;
+    const video = nativeVideoRef.current;
+    const adapter = {
+      playVideo: () => video.play().catch(() => {}),
+      pauseVideo: () => video.pause(),
+      mute: () => { video.muted = true; },
+      unMute: () => { video.muted = false; },
+      setVolume: value => { video.volume = Math.max(0, Math.min(1, value / 100)); },
+      getCurrentTime: () => video.currentTime || 0,
+      getDuration: () => video.duration || 0,
+      getVideoLoadedFraction: () => {
+        if (!video.duration || !video.buffered.length) return 0;
+        return video.buffered.end(video.buffered.length - 1) / video.duration;
+      },
+      seekTo: value => { video.currentTime = value; },
+      setPlaybackRate: value => { video.playbackRate = value; },
+      setPlaybackQuality: () => {},
+      getAvailableQualityLevels: () => [],
+      destroy: () => {},
+    };
+    playerRef.current = adapter;
+
+    const ready = () => {
+      setPlayerReady(true);
+      setDuration(video.duration || 0);
+      video.muted = true;
+      video.volume = volume / 100;
+    };
+    const onPlay = () => { setPlaying(true); startProgressTracker(); };
+    const onPause = () => { setPlaying(false); stopProgressTracker(); };
+    video.addEventListener('loadedmetadata', ready);
+    video.addEventListener('canplay', ready);
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('ended', onPause);
+    video.load();
+
+    return () => {
+      stopProgressTracker();
+      video.removeEventListener('loadedmetadata', ready);
+      video.removeEventListener('canplay', ready);
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('ended', onPause);
+      playerRef.current = null;
+    };
+  }, [url, videoId]);
 
   // ── Init YouTube Player ───────────────────────────────────────────────────
   useEffect(() => {
@@ -279,7 +330,11 @@ const CustomVideoPlayer = ({ url, title }) => {
     const block = (e) => e.preventDefault();
     const el = containerRef.current;
     if (el) el.addEventListener('contextmenu', block);
-    return () => { if (el) el.removeEventListener('contextmenu', block); };
+    if (el) el.addEventListener('dragstart', block);
+    return () => {
+      if (el) el.removeEventListener('contextmenu', block);
+      if (el) el.removeEventListener('dragstart', block);
+    };
   }, []);
 
   return (
@@ -303,11 +358,47 @@ const CustomVideoPlayer = ({ url, title }) => {
         userSelect: 'none',
       }}
     >
-      {/* YouTube IFrame renders here */}
-      <div
-        ref={iframeContainerRef}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-      />
+      {videoId ? (
+        <div
+          ref={iframeContainerRef}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+        />
+      ) : (
+        <video
+          ref={nativeVideoRef}
+          src={url}
+          playsInline
+          preload="metadata"
+          muted
+          disablePictureInPicture
+          controlsList="nodownload noremoteplayback nofullscreen"
+          onContextMenu={event => event.preventDefault()}
+          onDragStart={event => event.preventDefault()}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }}
+        />
+      )}
+
+      {watermark && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: '4%',
+            bottom: '18%',
+            zIndex: 12,
+            color: 'rgba(255,255,255,.34)',
+            fontSize: 'clamp(11px,1.5vw,16px)',
+            fontWeight: 700,
+            letterSpacing: '.04em',
+            textShadow: '0 1px 5px rgba(0,0,0,.65)',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            transform: 'rotate(-12deg)',
+          }}
+        >
+          Science Toppers • {watermark}
+        </div>
+      )}
 
       {/* Click overlay — sends play/pause to YT */}
       <div

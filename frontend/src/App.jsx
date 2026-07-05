@@ -23,6 +23,7 @@ import NoticesPage from './pages/NoticesPage';
 import Dashboard      from './pages/admin/Dashboard';
 import StudentsList   from './pages/admin/StudentsList';
 import StudentForm    from './pages/admin/StudentForm';
+import RecentLogins   from './pages/admin/RecentLogins';
 
 /* Pages that should NOT have the Navbar or main-content padding */
 const BARE_ROUTES = ['/splash', '/login'];
@@ -73,6 +74,7 @@ const AppShell = () => {
             <Route path="/admin/students/new" element={<ProtectedRoute requireAdmin><StudentForm /></ProtectedRoute>} />
             <Route path="/admin/notices" element={<ProtectedRoute requireAdmin><NoticesPage /></ProtectedRoute>} />
             <Route path="/admin/payments" element={<ProtectedRoute requireAdmin><PaymentDetails adminMode /></ProtectedRoute>} />
+            <Route path="/super-admin/recent-logins" element={<ProtectedRoute requireSuperAdmin><RecentLogins /></ProtectedRoute>} />
           </Routes>
           </AppErrorBoundary>
         </main>

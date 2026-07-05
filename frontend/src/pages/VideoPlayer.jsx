@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import client from '../api/client';
 import CustomVideoPlayer from '../components/CustomVideoPlayer';
+import { useAuth } from '../context/AuthContext';
 
 /* ── Orbital Loading Spinner ── */
 const OrbitalLoader = ({ message = 'Authenticating secure stream…' }) => (
@@ -21,6 +22,7 @@ const VideoPlayer = () => {
   const { videoId }  = useParams();
   const navigate     = useNavigate();
   const location     = useLocation();
+  const { user }     = useAuth();
 
   const [video]       = useState(location.state?.video || null);
   const [embedUrl, setEmbedUrl] = useState(null);
@@ -65,13 +67,7 @@ const VideoPlayer = () => {
         } else if (data.status === 'expired') {
           navigate('/expired');
         } else if (data.status === 'allowed') {
-          const url = data.embedUrl;
-          if (!url.includes('youtu.be') && !url.includes('youtube.com')) {
-            window.open(url, '_blank');
-            navigate(-1);
-          } else {
-            setEmbedUrl(url);
-          }
+          setEmbedUrl(data.embedUrl);
         } else {
           setError('Unexpected access status returned from server.');
         }
@@ -116,7 +112,7 @@ const VideoPlayer = () => {
               {video.title}
             </h2>
           )}
-          <CustomVideoPlayer url={embedUrl} title={video?.title} />
+          <CustomVideoPlayer url={embedUrl} title={video?.title} watermark={user?.username || user?.uid || 'Student'} />
         </div>
       ) : (
         <div className="state-box">

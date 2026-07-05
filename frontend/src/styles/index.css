@@ -2845,6 +2845,65 @@ select option {
 .notice-page-item p { color: var(--text-muted); white-space: pre-line; }
 .notice-page-item img { max-height: 260px; margin-top: 12px; border-radius: 12px; }
 .notice-page-item > button { border: 0; background: transparent; color: #EF4444; padding: 8px; }
+.notice-input-label {
+  margin: 4px 0 8px;
+  color: #334155;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+.notice-input-label.output { margin-top: 22px; }
+.notice-markdown-editor {
+  overflow: hidden;
+  border: 1px solid rgba(100,116,139,.25);
+  border-radius: 12px;
+  background: #fff;
+}
+.notice-markdown-editor textarea {
+  display: block;
+  border: 0;
+  border-radius: 0;
+  resize: vertical;
+  background: #fff;
+  box-shadow: none;
+}
+.notice-markdown-editor .notice-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(100,116,139,.18);
+  background: #F8FAFC;
+}
+.notice-markdown-editor .notice-toolbar button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: #475569;
+  background: transparent;
+}
+.notice-markdown-editor .notice-toolbar button:hover { color: #2563EB; background: #DBEAFE; }
+.notice-output-preview {
+  min-height: 170px;
+  padding: 18px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(100,116,139,.25);
+  border-radius: 12px;
+  color: #334155;
+  background: #fff;
+}
+.notice-output-preview > span { color: #94A3B8; }
+.notice-markdown { overflow-wrap: anywhere; }
+.notice-markdown h1 { font-size: 24px; margin: 0 0 10px; }
+.notice-markdown h2 { font-size: 20px; margin: 0 0 8px; }
+.notice-markdown h3 { font-size: 17px; margin: 0 0 7px; }
+.notice-markdown p { margin: 0 0 8px; color: #475569; white-space: pre-wrap; }
+.notice-markdown a { color: #2563EB; text-decoration: underline; }
+.notice-list-line { display: grid; grid-template-columns: 16px 1fr; gap: 5px; margin-bottom: 5px; color: #475569; }
+.recent-logins-card { padding: 0; overflow: hidden; margin-top: 22px; }
 
 .first-login-backdrop {
   z-index: 20000 !important;
@@ -2905,6 +2964,27 @@ select option {
   border-bottom: 1px solid var(--border);
 }
 .student-edit-modal .slide-panel-content { padding: 0; overflow: visible; }
+.student-device-reset {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(59,130,246,.18);
+  border-radius: 14px;
+  background: #EFF6FF;
+}
+.student-device-reset > span {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #2563EB;
+  background: #DBEAFE;
+}
+.student-device-reset h4 { color: #334155; margin-bottom: 4px; }
+.student-device-reset p { color: #64748B; font-size: 13px; line-height: 1.55; margin-bottom: 12px; }
 
 @media (max-width: 900px) {
   .sidebar-layout { display: block; }

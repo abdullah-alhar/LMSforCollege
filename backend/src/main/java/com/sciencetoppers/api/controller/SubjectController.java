@@ -69,7 +69,7 @@ public class SubjectController {
             String token = authHeader.substring(7);
             try {
                 String role = jwtUtil.extractRole(token);
-                if ("ADMIN".equalsIgnoreCase(role)) {
+                if ("ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role)) {
                     // Admins always have access to everything
                     items.forEach(item -> item.setAccessGranted(true));
                 } else {

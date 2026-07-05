@@ -27,27 +27,21 @@ public class NoticesController {
     public ResponseEntity<?> addNotice(@RequestBody java.util.Map<String, Object> body) {
         try {
             String title = body.get("title") != null ? String.valueOf(body.get("title")) : "";
-            String desc = body.get("desc") != null ? String.valueOf(body.get("desc")) : "";
-            String type = body.get("type") != null ? String.valueOf(body.get("type")) : "text";
-            String imageUrl = body.get("imageUrl") != null ? String.valueOf(body.get("imageUrl")) : "";
+            String type = body.get("type") != null ? String.valueOf(body.get("type")) : "t";
+            type = ("image".equalsIgnoreCase(type) || "i".equalsIgnoreCase(type)) ? "i" : "t";
             if (title == null || title.isBlank()) {
-                return ResponseEntity.badRequest().body("Title is required");
-            }
-            if ("image".equalsIgnoreCase(type) && imageUrl.isBlank()) {
-                return ResponseEntity.badRequest().body("Image URL is required");
+                return ResponseEntity.badRequest().body("Notice content is required");
             }
 
             long now = System.currentTimeMillis();
-            String isoDate = java.time.LocalDateTime.now().toString();
+            String isoDate = java.time.LocalDateTime.now().format(
+                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS"));
 
-            java.util.Map<String, Object> notice = new java.util.HashMap<>();
-            notice.put("title", title);
-            notice.put("desc", desc);
-            notice.put("content", desc);
-            notice.put("imageUrl", imageUrl);
+            java.util.Map<String, Object> notice = new java.util.LinkedHashMap<>();
             notice.put("created", now);
             notice.put("date", isoDate);
-            notice.put("type", type.toLowerCase());
+            notice.put("title", title);
+            notice.put("type", type);
 
             firebaseService.addNotice(notice).get();
             return ResponseEntity.ok(java.util.Map.of("message", "Notice added"));

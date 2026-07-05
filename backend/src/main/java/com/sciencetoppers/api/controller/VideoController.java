@@ -38,7 +38,7 @@ public class VideoController {
             String token = authHeader.substring(7);
             String role = jwtUtil.extractRole(token);
 
-            if ("ADMIN".equalsIgnoreCase(role)) {
+            if ("ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role)) {
                 // Admins see all videos from pathExtra (the master content store)
                 videos = firebaseService.getVideosForSection(subjectId, sectionId).get();
             } else {
@@ -101,7 +101,7 @@ public class VideoController {
         String token = authHeader.substring(7);
         String role = jwtUtil.extractRole(token);
 
-        if ("ADMIN".equalsIgnoreCase(role)) {
+        if ("ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role)) {
             String rawUrl = firebaseService.getRawContentUrl(subjectId, sectionId, folder, videoId).get();
             response.put("status", "allowed");
             response.put("embedUrl", youtubeProxyService.getProxiedUrl(rawUrl));

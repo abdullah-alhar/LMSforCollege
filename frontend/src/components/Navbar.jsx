@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Bell, ChevronLeft, ChevronRight, CreditCard, FlaskConical, Gauge,
-  GraduationCap, Home, LogOut, Menu, Settings, Users, X
+  GraduationCap, History, Home, LogOut, Menu, Settings, Users, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,7 +30,10 @@ const Navbar = () => {
   if (!user) return null;
 
   const isAdmin = user.role === 'ADMIN';
-  const items = isAdmin ? adminItems : studentItems;
+  const isSuperAdmin = user.isSuperAdmin === true;
+  const items = isAdmin
+    ? [...adminItems, ...(isSuperAdmin ? [{ to: '/super-admin/recent-logins', label: 'Login History', icon: History }] : [])]
+    : studentItems;
   const initials = (user.username || (isAdmin ? 'Admin User' : 'Student')).slice(0, 2).toUpperCase();
 
   const toggleCollapsed = () => {
@@ -40,8 +43,8 @@ const Navbar = () => {
     });
   };
 
-  const signOut = () => {
-    logout();
+  const signOut = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -87,7 +90,7 @@ const Navbar = () => {
             <span className="sidebar-avatar">{initials}</span>
             <div>
               <strong>{user.username || (isAdmin ? 'Admin User' : 'Student')}</strong>
-              <span>{isAdmin ? 'Admin' : 'Student'}</span>
+              <span>{isSuperAdmin ? 'Super Admin' : isAdmin ? 'Admin' : 'Student'}</span>
             </div>
           </div>
           <button className="sidebar-signout" onClick={signOut} title="Sign Out">

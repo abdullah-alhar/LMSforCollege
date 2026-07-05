@@ -4,6 +4,7 @@ import com.sciencetoppers.api.dto.LoginRequest;
 import com.sciencetoppers.api.security.JwtUtil;
 import com.sciencetoppers.api.service.AuthService;
 import com.sciencetoppers.api.service.FirebaseService;
+import com.sciencetoppers.api.service.LoginAuditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,9 @@ public class AuthController {
     @Autowired
     private FirebaseService firebaseService;
 
+    @Autowired
+    private LoginAuditService loginAuditService;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -34,6 +38,24 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException ex) {
             return ResponseEntity.status(401).body("Unauthorized: " + ex.getMessage());
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        try {
+            String token = authHeader.substring(7);
+            String username = jwtUtil.extractUsername(token);
+            String role = jwtUtil.extractRole(token);
+            loginAuditService.record(username, role, "LOGOUT");
+            return ResponseEntity.ok(Map.of("message", "Logout recorded"));
+        } catch (Exception exception) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Failed to record logout: " + exception.getMessage()));
         }
     }
 

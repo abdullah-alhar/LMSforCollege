@@ -1169,6 +1169,71 @@ public class FirebaseService {
     }
 
     /**
+     * Clears mobile-app device registration without deleting the student.
+     * Older app versions used different field and registry names, so this
+     * discovers device-specific keys within the user record and also clears
+     * the known UID-based registry locations.
+     */
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Integer> resetStudentMobileDevice(String uid) {
+        return readPath(BASE_PATH + "/users/" + uid).thenCompose(value -> {
+            List<String> paths = new ArrayList<>();
+            if (value instanceof Map) {
+                collectDeviceRegistrationPaths((Map<String, Object>) value, "/" + uid, paths);
+            }
+
+            List<String> registryRoots = List.of(
+                    "devices", "device", "deviceRegistry", "deviceRegistrations",
+                    "registeredDevices", "registeredDevice", "mobileDevices", "deviceIds",
+                    "deviceRegister", "deviceRegistration", "appDevices", "loginDevices"
+            );
+            for (String root : registryRoots) {
+                paths.add("/" + root + "/" + uid);
+            }
+            paths.add("/security/devices/" + uid);
+            paths.add("/security/deviceRegister/" + uid);
+            paths.add("/security/deviceRegistrations/" + uid);
+
+            List<CompletableFuture<Void>> deletes = new ArrayList<>();
+            for (String relativePath : new LinkedHashSet<>(paths)) {
+                deletes.add(deletePath(BASE_PATH + relativePath));
+            }
+            return CompletableFuture.allOf(deletes.toArray(new CompletableFuture[0]))
+                    .thenApply(ignored -> paths.size());
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void collectDeviceRegistrationPaths(
+            Map<String, Object> source, String parentPath, List<String> paths) {
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            String key = entry.getKey();
+            String normalized = key.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+            String currentPath = parentPath + "/" + key;
+
+            boolean deviceField =
+                    normalized.contains("device")
+                    || normalized.contains("imei")
+                    || normalized.contains("androidid")
+                    || normalized.contains("installationid")
+                    || normalized.contains("hardwareid")
+                    || normalized.contains("appinstanceid")
+                    || normalized.contains("registrationid")
+                    || normalized.contains("devicetoken")
+                    || normalized.contains("devicekey")
+                    || normalized.equals("uuid")
+                    || normalized.contains("serialnumber");
+
+            if (deviceField) {
+                paths.add("/users" + currentPath);
+            } else if (entry.getValue() instanceof Map) {
+                collectDeviceRegistrationPaths(
+                        (Map<String, Object>) entry.getValue(), currentPath, paths);
+            }
+        }
+    }
+
+    /**
      * Returns selected profile fields for a student node.
      * Fields returned: name, school, year, stream, phone, profileComplete, index.
      */

@@ -25,6 +25,16 @@ public class AdminStudentController {
         return jwtUtil.extractUsername(authHeader.substring(7));
     }
 
+    private boolean isAdmin(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return false;
+        try {
+            String role = jwtUtil.extractRole(authHeader.substring(7));
+            return "ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role);
+        } catch (Exception exception) {
+            return false;
+        }
+    }
+
     @GetMapping
     public ResponseEntity<?> listStudents() throws ExecutionException, InterruptedException {
         List<Map<String, Object>> students = firebaseService.getStudents().get();
@@ -131,5 +141,22 @@ public class AdminStudentController {
 
         firebaseService.deleteStudent(uid).get();
         return ResponseEntity.ok(Map.of("message", "Student deleted", "uid", uid));
+    }
+
+    @PostMapping("/{uid}/reset-mobile-device")
+    public ResponseEntity<?> resetMobileDevice(
+            @PathVariable String uid,
+            @RequestHeader(value = "Authorization", required = false) String authHeader)
+            throws ExecutionException, InterruptedException {
+
+        if (!isAdmin(authHeader)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Admin access required"));
+        }
+        int clearedPaths = firebaseService.resetStudentMobileDevice(uid).get();
+        return ResponseEntity.ok(Map.of(
+                "message", "Mobile app device registration reset",
+                "uid", uid,
+                "clearedPaths", clearedPaths
+        ));
     }
 }
