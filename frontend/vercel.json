@@ -38,11 +38,24 @@
           "value": "nosniff"
         }
       ]
+    },
+    {
+      "source": "/sitemap.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!sitemap.xml|sitemap-index.xml|robots.txt|llms.txt).*)",
+      "source": "/((?!sitemap.xml|sitemap-index.xml|sitemap.txt|robots.txt|llms.txt).*)",
       "destination": "/index.html"
     }
   ]
