@@ -1,0 +1,6 @@
+import{c as t,j as e,i as s,A as r}from"./index-N1Doda8z.js";/**
+ * @license lucide-react v0.364.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const i=t("Clock",[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["polyline",{points:"12 6 12 12 16 14",key:"68esgv"}]]),a=()=>e.jsxs("div",{className:"info-page",children:[e.jsx("div",{style:{width:96,height:96,borderRadius:"50%",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",display:"flex",alignItems:"center",justifyContent:"center",animation:"iconFloat 3s ease-in-out infinite",boxShadow:"0 0 32px rgba(239,68,68,0.15)"},children:e.jsx(i,{size:40,color:"var(--danger)"})}),e.jsxs("div",{style:{textAlign:"center"},children:[e.jsx("h2",{style:{color:"var(--text)",fontSize:"2rem",marginBottom:"0.5rem"},children:"Access Expired"}),e.jsx("p",{style:{color:"var(--text-muted)",maxWidth:"440px",lineHeight:"1.7"},children:"Your access to this content has expired. Please contact the admin to renew your subscription and regain access."})]}),e.jsxs(s,{to:"/",className:"btn btn-ghost btn-sm",style:{marginTop:"0.5rem"},children:[e.jsx(r,{size:14})," Back to Home"]}),e.jsx("style",{children:"@keyframes iconFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }"})]});export{a as default};

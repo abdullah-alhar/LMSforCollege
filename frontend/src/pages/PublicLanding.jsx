@@ -42,7 +42,7 @@ const PublicLanding = () => (
           <small>Crystal Science · Arafa</small>
         </div>
       </Link>
-      <Link to="/login" className="seo-login-link">
+      <Link to="/splash" className="seo-login-link">
         Student login <ArrowRight size={17} />
       </Link>
     </header>
@@ -58,7 +58,7 @@ const PublicLanding = () => (
             for science and mathematics students.
           </p>
           <div className="seo-actions">
-            <Link to="/login" className="seo-primary">
+            <Link to="/splash" className="seo-primary">
               Open learning platform <ArrowRight size={18} />
             </Link>
             <a href="#subjects" className="seo-secondary">
@@ -106,7 +106,7 @@ const PublicLanding = () => (
           <p>Already a registered student?</p>
           <h2>Continue learning with Science Toppers</h2>
         </div>
-        <Link to="/login">Sign in now <ArrowRight size={18} /></Link>
+        <Link to="/splash">Sign in now <ArrowRight size={18} /></Link>
       </section>
     </main>
 

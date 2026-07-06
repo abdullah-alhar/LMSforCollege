@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from './context/AuthContext';
@@ -8,24 +8,30 @@ import ProtectedRoute from './components/ProtectedRoute';
 import FirstLoginModal from './components/FirstLoginModal';
 import AppErrorBoundary from './components/AppErrorBoundary';
 
-import SplashScreen   from './pages/SplashScreen';
-import Login          from './pages/Login';
-import Home           from './pages/Home';
-import SubjectFolders from './pages/SubjectFolders';
-import VideoList      from './pages/VideoList';
-import SectionFolders from './pages/SectionFolders';
-import VideoPlayer    from './pages/VideoPlayer';
-import LockedContent  from './pages/LockedContent';
-import ExpiredAccess  from './pages/ExpiredAccess';
-import ProfileSettings from './pages/ProfileSettings';
-import PaymentDetails from './pages/PaymentDetails';
-import NoticesPage from './pages/NoticesPage';
 import PublicLanding from './pages/PublicLanding';
 
-import Dashboard      from './pages/admin/Dashboard';
-import StudentsList   from './pages/admin/StudentsList';
-import StudentForm    from './pages/admin/StudentForm';
-import RecentLogins   from './pages/admin/RecentLogins';
+const SplashScreen = lazy(() => import('./pages/SplashScreen'));
+const Login = lazy(() => import('./pages/Login'));
+const Home = lazy(() => import('./pages/Home'));
+const SubjectFolders = lazy(() => import('./pages/SubjectFolders'));
+const VideoList = lazy(() => import('./pages/VideoList'));
+const SectionFolders = lazy(() => import('./pages/SectionFolders'));
+const VideoPlayer = lazy(() => import('./pages/VideoPlayer'));
+const LockedContent = lazy(() => import('./pages/LockedContent'));
+const ExpiredAccess = lazy(() => import('./pages/ExpiredAccess'));
+const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
+const PaymentDetails = lazy(() => import('./pages/PaymentDetails'));
+const NoticesPage = lazy(() => import('./pages/NoticesPage'));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const StudentsList = lazy(() => import('./pages/admin/StudentsList'));
+const StudentForm = lazy(() => import('./pages/admin/StudentForm'));
+const RecentLogins = lazy(() => import('./pages/admin/RecentLogins'));
+
+const PageLoader = () => (
+  <div className="route-loader" role="status" aria-label="Loading page">
+    <span />
+  </div>
+);
 
 /* Pages that should NOT have the Navbar or main-content padding */
 const BARE_ROUTES = ['/splash', '/login'];
@@ -50,14 +56,15 @@ const AppShell = () => {
       {/* First-login profile completion modal (non-skippable) */}
       {showFirstLoginModal && <FirstLoginModal />}
 
-      {isBare ? (
-        <Routes>
+      <Suspense fallback={<PageLoader />}>
+        {isBare ? (
+          <Routes>
           <Route path="/splash" element={<SplashScreen />} />
           <Route path="/login"  element={<Login />} />
           <Route path="/" element={<PublicLanding />} />
-        </Routes>
-      ) : (
-        <main className="main-content">
+          </Routes>
+        ) : (
+          <main className="main-content">
           <AppErrorBoundary key={location.pathname}>
           <Routes>
             {/* Student routes */}
@@ -81,8 +88,9 @@ const AppShell = () => {
             <Route path="/super-admin/recent-logins" element={<ProtectedRoute requireSuperAdmin><RecentLogins /></ProtectedRoute>} />
           </Routes>
           </AppErrorBoundary>
-        </main>
-      )}
+          </main>
+        )}
+      </Suspense>
     </div>
   );
 };

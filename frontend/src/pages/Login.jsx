@@ -299,7 +299,6 @@ const Login = () => {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&family=Inter:wght@400;500;600&display=swap');
         @keyframes slideDown {
           from { opacity:0; transform:translateY(-6px); }
           to   { opacity:1; transform:translateY(0); }
