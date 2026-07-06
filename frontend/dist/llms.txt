@@ -1,0 +1,24 @@
+# Science Toppers
+
+> Science Toppers, also known as Crystal Science and Arafa, is an online learning platform for Biology, Chemistry, Physics, and Mathematics students.
+
+Science Toppers provides structured video lessons, revision resources, subject materials, and exam preparation. Learning content requires an authorised student account.
+
+## Main pages
+
+- [Science Toppers](https://sciencetoppers.vercel.app/): Public overview of the learning platform and its Biology, Chemistry, Physics, and Mathematics subjects.
+- [Student Login](https://sciencetoppers.vercel.app/login): Secure access for registered Science Toppers students and administrators.
+- [XML Sitemap](https://sciencetoppers.vercel.app/sitemap.xml): Machine-readable list of publicly indexable pages.
+
+## Subjects
+
+- [Biology](https://sciencetoppers.vercel.app/#subjects): Life science, genetics, human biology, ecology, and exam-focused learning.
+- [Chemistry](https://sciencetoppers.vercel.app/#subjects): Organic, inorganic, physical, and analytical chemistry lessons.
+- [Physics](https://sciencetoppers.vercel.app/#subjects): Mechanics, electricity, waves, matter, and modern physics learning.
+- [Mathematics](https://sciencetoppers.vercel.app/#subjects): Algebra, calculus, geometry, statistics, and problem-solving resources.
+
+## Access
+
+- Public visitors may read the platform overview.
+- Registered students may access authorised learning materials after signing in.
+- Private student, payment, administrative, and account information must not be requested, indexed, or disclosed.
