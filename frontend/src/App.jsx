@@ -19,6 +19,7 @@ import ExpiredAccess  from './pages/ExpiredAccess';
 import ProfileSettings from './pages/ProfileSettings';
 import PaymentDetails from './pages/PaymentDetails';
 import NoticesPage from './pages/NoticesPage';
+import PublicLanding from './pages/PublicLanding';
 
 import Dashboard      from './pages/admin/Dashboard';
 import StudentsList   from './pages/admin/StudentsList';
@@ -30,8 +31,9 @@ const BARE_ROUTES = ['/splash', '/login'];
 
 const AppShell = () => {
   const location = useLocation();
-  const isBare   = BARE_ROUTES.includes(location.pathname);
   const { user } = useAuth();
+  const isPublicHome = location.pathname === '/' && !user;
+  const isBare   = BARE_ROUTES.includes(location.pathname) || isPublicHome;
 
   // Show first-login modal for students who haven't completed their profile
   const showFirstLoginModal =
@@ -51,6 +53,7 @@ const AppShell = () => {
         <Routes>
           <Route path="/splash" element={<SplashScreen />} />
           <Route path="/login"  element={<Login />} />
+          <Route path="/" element={<PublicLanding />} />
         </Routes>
       ) : (
         <main className="main-content">
