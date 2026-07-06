@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lmsforcollege-tan.vercel.app/sitemap.xml
+Sitemap: https://sciencetoppers.vercel.app/sitemap.xml

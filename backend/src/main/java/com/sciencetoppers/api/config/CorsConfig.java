@@ -19,6 +19,7 @@ public class CorsConfig {
                             "http://localhost:5174",
                             "http://localhost:3000",
                             "http://localhost:4173",
+                            "https://sciencetoppers.vercel.app",
                             "https://lmsforcollege-tan.vercel.app"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
