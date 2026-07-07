@@ -1,4 +1,4 @@
-import{c as x,r as a,j as e,i as J,o as K,X as O,f as V,p as _,L as j,d as m}from"./index-N1Doda8z.js";import{U as ee,S as se}from"./StudentForm-CPIMY0t0.js";import{T as te}from"./trash-2-_LsE7pkb.js";/**
+import{c as x,r as a,j as e,i as J,o as K,X as O,f as V,p as _,L as j,d as m}from"./index-BAh4oO8-.js";import{U as ee,S as se}from"./StudentForm-BpwVPzv3.js";import{T as te}from"./trash-2-CZSlLBh4.js";/**
  * @license lucide-react v0.364.0 - ISC
  *
  * This source code is licensed under the ISC license.

@@ -53,7 +53,8 @@ const PublicLanding = () => (
           <p className="seo-eyebrow"><Sparkles size={15} /> Learn science with confidence</p>
           <h1>Science Toppers: Biology, Chemistry, Physics &amp; Mathematics</h1>
           <p className="seo-lead">
-            Science Toppers—also known through Crystal Science and Arafa—is an online
+            Science Toppers—also searched as Crystal Science, Crystal Science College,
+            and Arafa—is an online
             learning platform with focused lessons, revision resources, and exam preparation
             for science and mathematics students.
           </p>
@@ -99,6 +100,19 @@ const PublicLanding = () => (
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="seo-about-section" aria-labelledby="about-science-toppers">
+        <div>
+          <p>About the platform</p>
+          <h2 id="about-science-toppers">Science Toppers, Crystal Science College and Arafa</h2>
+        </div>
+        <p>
+          This official Science Toppers web platform helps students access organised learning
+          resources for Biology, Chemistry, Physics and Mathematics. Students who know the
+          classes as Crystal Science, Crystal Science College or Arafa can use this same
+          learning platform for lessons, revision and exam preparation.
+        </p>
       </section>
 
       <section className="seo-cta">
@@ -211,6 +225,21 @@ const PublicLanding = () => (
       }
       .seo-subject-card h3 { margin:23px 0 10px; color:#172554; font:800 1.25rem "Space Grotesk",sans-serif; }
       .seo-subject-card p { margin:0; color:#64748b; font-size:.9rem; line-height:1.65; }
+      .seo-about-section {
+        width:min(1180px,calc(100% - 40px)); margin:0 auto 70px; padding:32px 36px;
+        display:grid; grid-template-columns:minmax(240px,.55fr) minmax(0,1fr); gap:30px;
+        border:1px solid #dbe7f6; border-radius:24px;
+        background:rgba(255,255,255,.82); box-shadow:0 15px 38px rgba(30,64,175,.06);
+      }
+      .seo-about-section > div > p {
+        margin:0 0 8px; color:#2563eb; font-size:.76rem; font-weight:800;
+        letter-spacing:.1em; text-transform:uppercase;
+      }
+      .seo-about-section h2 {
+        margin:0; color:#10214a; font:800 clamp(1.55rem,2.5vw,2.25rem)/1.12 "Space Grotesk",sans-serif;
+        letter-spacing:-.035em;
+      }
+      .seo-about-section > p { margin:0; color:#5c6f8e; line-height:1.75; }
       .seo-cta {
         width:min(1180px,calc(100% - 40px)); margin:0 auto 70px; padding:36px 40px;
         display:flex; align-items:center; justify-content:space-between; gap:25px;
@@ -229,6 +258,7 @@ const PublicLanding = () => (
         .seo-hero { grid-template-columns:1fr; margin-top:35px; gap:25px; }
         .seo-hero-art { min-height:370px; }
         .seo-subject-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .seo-about-section { grid-template-columns:1fr; }
       }
       @media(max-width:600px) {
         .seo-nav { width:min(100% - 28px,1180px); min-height:72px; }
@@ -243,6 +273,7 @@ const PublicLanding = () => (
         .seo-hero-art { min-height:330px; }
         .seo-subject-grid { grid-template-columns:1fr; }
         .seo-subject-card { min-height:unset; }
+        .seo-about-section { width:calc(100% - 28px); padding:26px 22px; }
         .seo-cta { padding:28px 22px; align-items:flex-start; flex-direction:column; }
         .seo-cta a { width:100%; }
         .seo-footer { flex-direction:column; }
