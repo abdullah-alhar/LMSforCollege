@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sciencetoppers.vercel.app/sitemap.txt
+Sitemap: https://sciencetoppers.vercel.app/sitemap.xml
+Sitemap: https://sciencetoppers.vercel.app/sitemap-index.xml
